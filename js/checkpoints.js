@@ -6,7 +6,7 @@ const CHECKPOINTS = [
     location: "ARM в кластере Lepton, ряд C",
     codeComment: "// Получен новый запрос от агента...",
     codeLine: 'const <span class="variable">mission</span> = <span class="function">decode</span>(<span class="string">"latest-transmission"</span>);',
-    riddle: "Среди машин, что именованы зверем, найди ряд, третий по алфавиту. Тот, кто краснеет от ошибок, но не имеет сердца, ждёт тебя там.",
+    riddle: "Среди машин, чьи имена — из мира частиц, найди ряд, третий по алфавиту. Тот, кто краснеет от ошибок, но не имеет сердца, ждёт тебя там.",
     emoji: "🔍",
   },
   {
@@ -46,7 +46,7 @@ const CHECKPOINTS = [
     location: "Логотип School 21 у входа в кампус",
     codeComment: "// Финальный коммит. Цель — рядом.",
     codeLine: 'const <span class="variable">mission</span> = <span class="keyword">await</span> <span class="function">deploy</span>(<span class="string">"production"</span>);',
-    riddle: "Финальный коммит. Найди то, что встречает каждого, кто переступает порог. Логотип, который не нуждается в представлении.",
+    riddle: "Найди то, что встречает каждого, кто переступает порог. Логотип, который не нуждается в представлении.",
     emoji: "💻",
   },
 ];
