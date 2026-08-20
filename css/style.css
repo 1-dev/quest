@@ -548,6 +548,35 @@ body::after {
   box-shadow: 0 0 15px var(--green-glow);
 }
 
+.my-numbers-list {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: 0.5rem 0;
+}
+
+.my-num {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--green);
+  border: 2px solid var(--green);
+  border-radius: 8px;
+  background: var(--bg);
+  animation: digitReveal 0.4s cubic-bezier(0.34,1.56,0.64,1) backwards;
+}
+
+.my-num:nth-child(1) { animation-delay: 0.1s; }
+.my-num:nth-child(2) { animation-delay: 0.2s; }
+.my-num:nth-child(3) { animation-delay: 0.3s; }
+.my-num:nth-child(4) { animation-delay: 0.4s; }
+.my-num:nth-child(5) { animation-delay: 0.5s; }
+
 .password-digit.active {
   border-color: var(--yellow);
   color: var(--yellow);

@@ -65,6 +65,9 @@ const QuestApp = (() => {
   function startQuest(nickname) {
     const order = shuffle([0, 1, 2, 3, 4]);
     const salt = Math.random().toString(36).slice(2, 10);
+    const count = Math.floor(Math.random() * 5) + 1;
+    const allNums = shuffle([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21]);
+    const myNumbers = allNums.slice(0, count).sort((a, b) => a - b);
     const state = {
       nickname: nickname.trim(),
       startTime: Date.now(),
@@ -73,6 +76,7 @@ const QuestApp = (() => {
       currentIndex: 0,
       collectedDigits: [],
       completedCheckpoints: [],
+      myNumbers,
     };
     setState(state);
     return state;

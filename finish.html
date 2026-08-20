@@ -47,6 +47,11 @@
           <div id="route-display" class="text-sm text-dim"></div>
         </div>
 
+        <div id="my-numbers-section" class="text-center" style="margin-top:1rem">
+          <div class="text-xs text-dim mb-1">ТВОИ НОМЕРКИ:</div>
+          <div id="my-numbers-finish" class="my-numbers-list" style="justify-content:center"></div>
+        </div>
+
         <div class="separator"></div>
 
         <div id="form-section">
@@ -124,6 +129,14 @@
         return `<span class="text-green">${i + 1}</span>. ${cp.emoji} ${cp.title}`;
       });
       document.getElementById("route-display").innerHTML = routeLabels.join(" → ");
+
+      if (state.myNumbers && state.myNumbers.length) {
+        document.getElementById("my-numbers-finish").innerHTML = state.myNumbers.map(n =>
+          '<div class="my-num">' + n + '</div>'
+        ).join("");
+      } else {
+        document.getElementById("my-numbers-section").style.display = "none";
+      }
 
       QuestApp.confetti();
 

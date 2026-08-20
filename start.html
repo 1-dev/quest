@@ -27,6 +27,52 @@
       color: var(--blue);
       text-align: center;
     }
+    .my-numbers-box {
+      background: rgba(0,255,156,0.05);
+      border: 2px solid var(--green);
+      border-radius: 12px;
+      padding: 1.2rem;
+      margin: 1rem 0;
+      text-align: center;
+    }
+    .my-numbers-label {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 0.6rem;
+    }
+    .my-numbers-list {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin: 0.5rem 0;
+    }
+    .my-num {
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--green);
+      border: 2px solid var(--green);
+      border-radius: 8px;
+      background: var(--bg);
+      animation: digitReveal 0.4s cubic-bezier(0.34,1.56,0.64,1) backwards;
+    }
+    .my-num:nth-child(1) { animation-delay: 0.1s; }
+    .my-num:nth-child(2) { animation-delay: 0.2s; }
+    .my-num:nth-child(3) { animation-delay: 0.3s; }
+    .my-num:nth-child(4) { animation-delay: 0.4s; }
+    .my-num:nth-child(5) { animation-delay: 0.5s; }
+    .my-numbers-note {
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      margin-top: 0.5rem;
+    }
   </style>
 </head>
 <body>
