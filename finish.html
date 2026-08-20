@@ -51,8 +51,8 @@
           <div class="text-xs text-dim mb-1">НОМЕРКИ УЧАСТНИКА:</div>
           <div id="my-numbers-finish" class="my-numbers-list" style="justify-content:center"></div>
           <div id="numbers-input-area" class="mt-1">
-            <div class="input-group" style="max-width:300px; margin:0 auto">
-              <label class="input-label" for="numbers-input">// numbers.assign (через запятую)</label>
+            <div class="text-xs text-dim">Номерки не найдены. Введи вручную:</div>
+            <div class="input-group" style="max-width:300px; margin:0.5rem auto 0">
               <input type="text" id="numbers-input" class="input" placeholder="3, 7, 14" autocomplete="off">
             </div>
           </div>
@@ -103,6 +103,7 @@
   </div>
 
   <canvas id="confetti-canvas"></canvas>
+  <script src="js/config.js"></script>
   <script src="js/checkpoints.js"></script>
   <script src="js/app.js"></script>
   <script>
@@ -186,8 +187,24 @@
         btn.disabled = true;
         btn.textContent = "⟳ отправка...";
 
-        const rawNums = numbersInput.value.replace(/[^0-9,\s]/g, "");
-        const assignedNums = rawNums.split(/[,\s]+/).map(Number).filter(n => n >= 1 && n <= 21);
+        // Try to fetch numbers from Google Sheets
+        let assignedNums = [];
+        if (typeof API_URL !== "undefined" && API_URL) {
+          try {
+            const res = await fetch(API_URL + "?action=numbers&name=" + encodeURIComponent(state.nickname) + "&t=" + Date.now());
+            const data = await res.json();
+            if (data.ok && data.numbers && data.numbers.length) {
+              assignedNums = data.numbers;
+            }
+          } catch (e) {}
+        }
+
+        // Fallback: read from input
+        if (!assignedNums.length) {
+          const rawNums = numbersInput.value.replace(/[^0-9,\s]/g, "");
+          assignedNums = rawNums.split(/[,\s]+/).map(Number).filter(n => n >= 1 && n <= 21);
+        }
+
         if (assignedNums.length) {
           state.myNumbers = assignedNums;
           QuestApp.setState(state);
@@ -198,6 +215,14 @@
         document.getElementById("form-section").style.display = "none";
         document.getElementById("result-section").style.display = "block";
         document.getElementById("finish-time").textContent = timeStr;
+
+        // Show numbers
+        if (state.myNumbers && state.myNumbers.length) {
+          document.getElementById("my-numbers-finish").innerHTML = state.myNumbers.map(n =>
+            '<div class="my-num">' + n + '</div>'
+          ).join("");
+          document.getElementById("numbers-input-area").style.display = "none";
+        }
 
         const lb = await QuestApp.getLeaderboard();
         const rank = lb.findIndex(e => e.name === state.nickname && e.time === time) + 1;
