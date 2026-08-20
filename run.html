@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>⚡ Чекпоинт — Спринт</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .next-location-box {
+      background: rgba(255,215,0,0.05);
+      border: 2px dashed var(--yellow);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+      text-align: center;
+    }
+    .next-location-box .arrow {
+      font-size: 2rem;
+      color: var(--yellow);
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+    .next-location-box .location-name {
+      font-size: 1.2rem;
+      color: var(--yellow);
+      font-weight: 700;
+      margin: 0.5rem 0;
+    }
+    .next-location-box .location-desc { color: var(--text-dim); font-size: 0.85rem; }
+    .blocked-overlay {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; min-height: 50vh; text-align: center;
+    }
+    .blocked-overlay .big-icon { font-size: 4rem; margin-bottom: 1rem; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="quest-timer" class="timer"></div>
+
+    <div class="terminal">
+      <div class="terminal-header">
+        <div class="terminal-dot red"></div>
+        <div class="terminal-dot yellow"></div>
+        <div class="terminal-dot green"></div>
+        <span class="terminal-title" id="term-title">checkpoint@loading...</span>
+      </div>
+      <div class="terminal-body">
+        <div id="progress"></div>
+        <div id="checkpoint-content">
+          <div class="text-center text-dim pulse" style="padding:3rem 0">⟳ Валидация токена...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <canvas id="confetti-canvas"></canvas>
+  <script src="js/checkpoints.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    (function () {
+      const state = QuestApp.getState();
+      if (!state || !state.startTime) { location.href = "start.html"; return; }
+
+      const token = new URLSearchParams(location.search).get("t");
+
+      if (!token || !QuestApp.validateToken(token, state)) {
+        showBlocked();
+        return;
+      }
+
+      const cpId = QuestApp.tokenToCheckpointId(token);
+      const cp = CHECKPOINTS[cpId];
+      const seqIndex = state.order.indexOf(cpId);
+
+      if (seqIndex < state.currentIndex) {
+        showAlreadyDone(cpId, seqIndex);
+      } else if (seqIndex === state.currentIndex) {
+        showCurrentCheckpoint(cpId, seqIndex);
+      } else {
+        showTooEarly(cpId, seqIndex);
+      }
+
+      function showCurrentCheckpoint(cpId, seqIndex) {
+        const cp = CHECKPOINTS[cpId];
+        const isLast = seqIndex === 4;
+        const nextCpId = isLast ? null : state.order[seqIndex + 1];
+        const nextCp = nextCpId !== null ? CHECKPOINTS[nextCpId] : null;
+
+        QuestApp.renderProgress(seqIndex);
+        document.getElementById("term-title").textContent =
+          "checkpoint-" + String(cpId + 1).padStart(2, "0") + "@scan-confirmed";
+
+        document.getElementById("checkpoint-content").innerHTML = `
+          <span class="checkpoint-num">${String(cpId + 1).padStart(2, "0")}</span>
+
+          <div class="flex items-center gap-2 mb-1">
+            <span style="font-size:1.8rem">${cp.emoji}</span>
+            <div>
+              <div class="title" style="font-size:1.5rem">${cp.title}</div>
+              <div class="subtitle">${cp.location}</div>
+            </div>
+          </div>
+
+          <div class="status status-success">✓ QR-код принят! Ты на правильной точке.</div>
+
+          <div class="code-block mt-2">
+            <div><span class="comment">${cp.codeComment}</span></div>
+            <div>${cp.codeLine}</div>
+          </div>
+
+          <div class="riddle">
+            <em>«${cp.riddle}»</em>
+          </div>
+
+          <div class="digit-display">
+            <div class="text-xs text-dim mb-1">ЦИФРА ПАРОЛЯ #${seqIndex + 1}:</div>
+            <div id="digit" class="digit">?</div>
+          </div>
+
+          <div class="separator"></div>
+
+          <div class="text-xs text-dim mb-1">ПАРОЛЬ СОБИРАЕТСЯ:</div>
+          <div id="password-display" class="password-display"></div>
+
+          <div class="separator"></div>
+
+          <div id="next-area" style="opacity:0; transition:opacity 0.6s">
+            ${isLast
+              ? `<div class="next-location-box">
+                   <div class="arrow">🏁</div>
+                   <div class="location-name">ВСЕ КОММИТЫ СОБРАНЫ!</div>
+                   <div class="location-desc">Беги к организатору и назови пароль.</div>
+                   <div class="mt-2"><a href="finish.html" class="btn btn-primary glow">→ git push</a></div>
+                 </div>`
+              : `<div class="next-location-box">
+                   <div class="arrow">⬇</div>
+                   <div class="location-name">${nextCp.emoji} Следующая точка: ${nextCp.title}</div>
+                   <div class="location-desc">${nextCp.location}</div>
+                   <div class="mt-1 text-xs text-dim">Ищи QR-код на этой локации</div>
+                 </div>`
+            }
+          </div>
+
+          <div id="next-hint-area" style="opacity:0; transition:opacity 0.5s">
+            <div class="hint-toggle" onclick="this.nextElementSibling.classList.toggle('visible')">
+              💡 Подсказка: где найти следующий QR?
+            </div>
+            <div class="hint-content">${cp.hint}</div>
+          </div>
+
+          <div class="text-center mt-2">
+            <span class="hint-toggle" id="reset-btn" style="font-size:0.7rem">↺ Начать заново</span>
+          </div>
+        `;
+
+        QuestApp.completeCheckpoint(cpId);
+
+        setTimeout(() => {
+          document.getElementById("digit").textContent = cp.digit;
+        }, 400);
+
+        const freshState = QuestApp.getState();
+        QuestApp.renderPasswordDisplay(freshState.collectedDigits);
+
+        setTimeout(() => {
+          document.getElementById("next-area").style.opacity = "1";
+        }, 1400);
+
+        setTimeout(() => {
+          document.getElementById("next-hint-area").style.opacity = "1";
+        }, 2000);
+
+        QuestApp.confetti();
+
+        document.getElementById("reset-btn").addEventListener("click", () => {
+          if (confirm("Ты уверен? Весь прогресс будет сброшен.")) {
+            QuestApp.resetQuest();
+            location.href = "start.html";
+          }
+        });
+      }
+
+      function showAlreadyDone(cpId, seqIndex) {
+        const cp = CHECKPOINTS[cpId];
+        QuestApp.renderProgress(state.currentIndex);
+        document.getElementById("term-title").textContent = "checkpoint-" + (cpId + 1) + "@already-scanned";
+        document.getElementById("checkpoint-content").innerHTML = `
+          <span class="checkpoint-num">${String(cpId + 1).padStart(2, "0")}</span>
+          <div class="title" style="font-size:1.5rem">${cp.emoji} ${cp.title}</div>
+          <div class="status status-warning mt-2">⚠ Этот QR уже отсканирован</div>
+          <div class="text-dim mt-2">Цифра уже получена. Ищи QR на следующей локации по маршруту.</div>
+          <div class="separator"></div>
+          <div class="text-xs text-dim mb-1">ПАРОЛЬ СОБИРАЕТСЯ:</div>
+          <div id="password-display" class="password-display"></div>
+        `;
+        QuestApp.renderPasswordDisplay(state.collectedDigits);
+      }
+
+      function showTooEarly(cpId, seqIndex) {
+        const cp = CHECKPOINTS[cpId];
+        QuestApp.renderProgress(state.currentIndex);
+        document.getElementById("term-title").textContent = "checkpoint-" + (cpId + 1) + "@wrong-order";
+        document.getElementById("checkpoint-content").innerHTML = `
+          <div class="blocked-overlay">
+            <div class="big-icon">🚫</div>
+            <div class="title" style="font-size:1.5rem">Неверный порядок!</div>
+            <div class="subtitle mt-1">Этот чекпоинт — #${seqIndex + 1} в твоём маршруте.</div>
+            <div class="subtitle">Сейчас ты на шаге #${state.currentIndex + 1}.</div>
+            <div class="separator"></div>
+            <div class="text-xs text-dim mb-1">ТВОЙ МАРШРУТ:</div>
+            <div class="code-block" style="text-align:left; display:inline-block">
+              ${state.order.map((id, i) => {
+                const c = CHECKPOINTS[id];
+                const done = i < state.currentIndex ? "✓" : i === state.currentIndex ? "▶" : "○";
+                const cls = i < state.currentIndex ? "text-green" : i === state.currentIndex ? "text-yellow" : "text-dim";
+                return '<div class="' + cls + '">' + done + " " + c.emoji + " " + c.title + "</div>";
+              }).join("")}
+            </div>
+            <div class="mt-2">
+              <span class="status status-info">Вернись к точке #${state.currentIndex + 1}</span>
+            </div>
+          </div>
+        `;
+      }
+
+      function showBlocked() {
+        QuestApp.stopTimerDisplay();
+        document.getElementById("term-title").textContent = "access@denied";
+        document.getElementById("checkpoint-content").innerHTML = `
+          <div class="blocked-overlay">
+            <div class="big-icon">🔒</div>
+            <div class="title" style="font-size:1.5rem">Доступ запрещён</div>
+            <div class="subtitle mt-1">Неверный или отсутствующий токен.</div>
+            <div class="text-dim mt-1">Пройди регистрацию на start.html и получи стартовую подсказку.</div>
+            <div class="code-block mt-2">
+              <div><span class="comment">// ошибка: invalid token</span></div>
+              <div><span class="comment">// Нужно: start.html → ввести ник → получить маршрут</span></div>
+            </div>
+            <div class="mt-2">
+              <a href="start.html" class="btn">↺ К началу</a>
+            </div>
+          </div>
+        `;
+      }
+    })();
+  </script>
+</body>
+</html>

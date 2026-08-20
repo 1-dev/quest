@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>⚡ Волонтёрский Спринт — Школа 21</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .first-hint-box {
+      background: rgba(255,215,0,0.05);
+      border: 2px solid var(--yellow);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+      text-align: center;
+    }
+    .first-hint-box .arrow { font-size: 2rem; animation: pulse 1.5s ease-in-out infinite; }
+    .first-hint-box .loc-name { font-size: 1.2rem; color: var(--yellow); font-weight: 700; margin: 0.5rem 0; }
+    .first-hint-box .loc-desc { color: var(--text-dim); font-size: 0.85rem; }
+    .no-digit-note {
+      background: rgba(0,212,255,0.05);
+      border: 1px solid rgba(0,212,255,0.3);
+      border-radius: 8px;
+      padding: 0.8rem 1rem;
+      margin: 1rem 0;
+      font-size: 0.8rem;
+      color: var(--blue);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="terminal">
+      <div class="terminal-header">
+        <div class="terminal-dot red"></div>
+        <div class="terminal-dot yellow"></div>
+        <div class="terminal-dot green"></div>
+        <span class="terminal-title">volunteer-sprint@school21 ~/init</span>
+      </div>
+      <div class="terminal-body">
+
+        <div id="phase-reg">
+          <pre class="ascii-art fade-in">
+ █████╗ ██╗   ██╗████████╗ ██████╗ ██╗   ██╗███╗   ███╗
+██╔══██╗██║   ██║╚══██╔══╝██╔═══██╗██║   ██║████╗ ████║
+███████║██║   ██║   ██║   ██║   ██║██║   ██║██╔████╔██║
+██╔══██║██║   ██║   ██║   ██║   ██║██║   ██║██║╚██╔╝██║
+██║  ██║╚██████╔╝   ██║   ╚██████╔╝╚██████╔╝██║ ╚═╝ ██║
+╚═╝  ╚═╝ ╚═════╝    ╚═╝    ╚═════╝  ╚═════╝ ╚═╝     ╚═╝
+          </pre>
+
+          <div class="title fade-in fade-in-delay-1">Волонтёрский Спринт</div>
+          <div class="subtitle fade-in fade-in-delay-2">5 коммитов до успеха — Школа 21</div>
+
+          <div class="fade-in fade-in-delay-2">
+            <span class="status status-info">v3.1 — hint-then-digit</span>
+          </div>
+
+          <div class="separator fade-in fade-in-delay-3"></div>
+
+          <div class="fade-in fade-in-delay-3" style="line-height:1.8">
+            <p>Ты — новый модуль волонтёрской системы.</p>
+            <p class="mt-1">Чтобы получить максимальные права доступа, собери <strong class="text-green">5 цифровых подписей</strong> в разных точках кампуса.</p>
+            <p class="mt-1">Порядок — <strong class="text-yellow">случайный</strong>. Навигация — <strong class="text-blue">только через QR-коды</strong>.</p>
+          </div>
+
+          <div class="separator fade-in fade-in-delay-4"></div>
+
+          <div class="fade-in fade-in-delay-5 mt-2">
+            <div class="input-group">
+              <label class="input-label" for="nickname">// user.nickname</label>
+              <input type="text" id="nickname" class="input" placeholder="Введи свой никнейм..." maxlength="30" autocomplete="off" autofocus>
+            </div>
+          </div>
+
+          <div class="fade-in fade-in-delay-5 text-center mt-2">
+            <button id="start-btn" class="btn btn-primary glow" style="font-size:1.1rem; padding:1rem 2.5rem;">
+              ▶ git init --sprint
+            </button>
+            <div class="text-xs mt-1" id="error-msg" style="color:var(--red); min-height:1.2em"></div>
+          </div>
+        </div>
+
+        <div id="phase-hint" style="display:none">
+          <div class="title">Миссия начата</div>
+          <div class="subtitle" id="welcome-name"></div>
+
+          <div class="separator"></div>
+
+          <div class="no-digit-note">
+            Цифра выдаётся только после сканирования QR на локации.
+          </div>
+
+          <div id="first-hint-box" class="first-hint-box">
+            <div class="arrow">⬇</div>
+            <div class="loc-name" id="first-loc-name"></div>
+            <div class="loc-desc" id="first-loc-desc"></div>
+            <div class="mt-1 text-xs text-dim">Ищи QR-код на этой локации</div>
+          </div>
+
+          <div class="hint-toggle" onclick="this.nextElementSibling.classList.toggle('visible')">
+            💡 Нужна подробная подсказка?
+          </div>
+          <div class="hint-content" id="first-hint-text"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <canvas id="confetti-canvas"></canvas>
+  <script src="js/checkpoints.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    (function () {
+      const params = new URLSearchParams(location.search);
+      const cpParam = params.get("cp");
+
+      if (cpParam !== null) {
+        const cpId = parseInt(cpParam);
+        const state = QuestApp.getState();
+        if (state && state.startTime && state.salt && state.order) {
+          location.replace("run.html?t=" + QuestApp.makeToken(cpId, state.salt));
+          return;
+        }
+      }
+
+      const reg = document.getElementById("phase-reg");
+      const hint = document.getElementById("phase-hint");
+      const input = document.getElementById("nickname");
+      const btn = document.getElementById("start-btn");
+      const err = document.getElementById("error-msg");
+
+      function go() {
+        const name = input.value.trim();
+        if (!name) {
+          input.style.borderColor = "var(--red)";
+          err.textContent = "// ошибка: nickname required";
+          input.focus();
+          return;
+        }
+        btn.disabled = true;
+        btn.textContent = "⟳ shuffling...";
+
+        const state = QuestApp.startQuest(name);
+        const firstCpId = state.order[0];
+        const firstCp = CHECKPOINTS[firstCpId];
+
+        document.getElementById("welcome-name").textContent = "Агент: " + name;
+        document.getElementById("first-loc-name").textContent = firstCp.emoji + " " + firstCp.title;
+        document.getElementById("first-loc-desc").textContent = firstCp.location;
+        document.getElementById("first-hint-text").textContent = firstCp.hint;
+
+        reg.style.display = "none";
+        hint.style.display = "block";
+        QuestApp.confetti();
+      }
+
+      btn.addEventListener("click", go);
+      input.addEventListener("keydown", e => { if (e.key === "Enter") go(); });
+      input.addEventListener("input", () => {
+        input.style.borderColor = "";
+        err.textContent = "";
+      });
+    })();
+  </script>
+</body>
+</html>

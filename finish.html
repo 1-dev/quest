@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🏁 Финиш — git push | ⚡ Спринт</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="container">
+    <div class="terminal">
+      <div class="terminal-header">
+        <div class="terminal-dot red"></div>
+        <div class="terminal-dot yellow"></div>
+        <div class="terminal-dot green"></div>
+        <span class="terminal-title">finish@volunteer-sprint</span>
+      </div>
+      <div class="terminal-body">
+
+        <div id="progress"></div>
+
+        <div class="title">git push</div>
+        <div class="subtitle">Все коммиты собраны. Миссия завершена.</div>
+
+        <div class="separator"></div>
+
+        <div class="code-block">
+          <div><span class="comment">// Миссия: завершена ✓</span></div>
+          <div><span class="comment">// Агент: <span id="agent-name">...</span></span></div>
+          <div><span class="keyword">const</span> <span class="variable">password</span> = <span class="string" id="password-code">"..."</span>;</div>
+          <div><span class="keyword">const</span> <span class="variable">time</span> = <span class="string" id="time-code">"..."</span>;</div>
+          <div><span class="function">deploy</span>(<span class="variable">password</span>, <span class="variable">time</span>);</div>
+        </div>
+
+        <div class="text-center">
+          <div class="text-xs text-dim mb-1">ТВОЙ ПАРОЛЬ:</div>
+          <div id="password-display" class="password-display mb-2"></div>
+        </div>
+
+        <div class="text-center">
+          <div class="text-xs text-dim mb-1">ВРЕМЯ ПРОХОЖДЕНИЯ:</div>
+          <div id="finish-time" class="digit text-green" style="font-size:2.5rem">--:--.--</div>
+        </div>
+
+        <div class="text-center">
+          <div class="text-xs text-dim mb-1">МАРШРУТ:</div>
+          <div id="route-display" class="text-sm text-dim"></div>
+        </div>
+
+        <div class="separator"></div>
+
+        <div id="form-section">
+          <div class="text-center mb-2">
+            <span class="status status-info">Назови пароль организатору для подтверждения</span>
+          </div>
+          <div class="input-group">
+            <label class="input-label" for="password-input">// password.verify</label>
+            <input type="text" id="password-input" class="input" placeholder="Введи 5-значный пароль..." maxlength="5" autocomplete="off" inputmode="numeric" pattern="[0-9]*">
+          </div>
+          <div class="text-center mt-1">
+            <div class="text-xs" id="verify-msg" style="min-height:1.2em"></div>
+          </div>
+          <div class="text-center mt-2">
+            <button id="submit-btn" class="btn btn-primary glow" style="font-size:1rem; padding:0.8rem 2rem;">
+              🚀 git push --force
+            </button>
+          </div>
+        </div>
+
+        <div id="result-section" style="display:none">
+          <div class="status status-success text-center mb-2" style="font-size:1rem; padding:1rem">
+            ✓ Пароль принят! Результат сохранён.
+          </div>
+
+          <div class="text-center mt-2 mb-2">
+            <div class="text-xs text-dim mb-1">ТВОЁ МЕСТО:</div>
+            <div id="player-rank" class="digit" style="font-size:3rem; color:var(--yellow)">--</div>
+          </div>
+        </div>
+
+        <div class="separator"></div>
+
+        <div class="text-xs text-dim mb-1 text-center">🏆 ТАБЛИЦА ЛИДЕРОВ</div>
+        <div id="leaderboard" class="leaderboard"></div>
+
+        <div class="nav-arrows" style="justify-content:center">
+          <a href="start.html" class="btn" id="reset-btn">↺ Начать заново</a>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <canvas id="confetti-canvas"></canvas>
+  <script src="js/checkpoints.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    (function () {
+      const state = QuestApp.getState();
+      if (!state || !state.startTime) { location.href = "start.html"; return; }
+
+      if (state.currentIndex < 5) {
+        location.href = "run.html?cp=" + state.order[state.currentIndex];
+        return;
+      }
+
+      QuestApp.stopTimerDisplay();
+      QuestApp.renderProgress(5);
+
+      const password = QuestApp.assemblePassword(state);
+      const time = QuestApp.getTime();
+      const timeStr = QuestApp.formatTime(time);
+
+      document.getElementById("agent-name").textContent = state.nickname;
+      document.getElementById("password-code").textContent = '"' + password + '"';
+      document.getElementById("time-code").textContent = '"' + timeStr + '"';
+      document.getElementById("finish-time").textContent = timeStr;
+
+      const digits = password.split("").map(Number);
+      QuestApp.renderPasswordDisplay(digits);
+
+      const routeLabels = state.order.map((id, i) => {
+        const cp = CHECKPOINTS[id];
+        return `<span class="text-green">${i + 1}</span>. ${cp.emoji} ${cp.title}`;
+      });
+      document.getElementById("route-display").innerHTML = routeLabels.join(" → ");
+
+      QuestApp.confetti();
+
+      let timerInterval = setInterval(() => {
+        const el = document.getElementById("finish-time");
+        if (el) el.textContent = QuestApp.formatTime(QuestApp.getTime());
+      }, 100);
+
+      const input = document.getElementById("password-input");
+      const btn = document.getElementById("submit-btn");
+      const msg = document.getElementById("verify-msg");
+
+      function verify() {
+        const val = input.value.trim();
+        if (!val) {
+          input.style.borderColor = "var(--red)";
+          msg.textContent = "// ошибка: password required";
+          msg.style.color = "var(--red)";
+          input.focus();
+          return;
+        }
+        if (val !== password) {
+          input.style.borderColor = "var(--red)";
+          msg.textContent = "// ошибка: неверный пароль. Попробуй снова.";
+          msg.style.color = "var(--red)";
+          input.value = "";
+          input.focus();
+          return;
+        }
+
+        clearInterval(timerInterval);
+        QuestApp.finishQuest();
+
+        document.getElementById("form-section").style.display = "none";
+        document.getElementById("result-section").style.display = "block";
+        document.getElementById("finish-time").textContent = timeStr;
+
+        const lb = QuestApp.getLeaderboard();
+        const rank = lb.findIndex(e => e.name === state.nickname && e.time === time) + 1;
+        document.getElementById("player-rank").textContent = rank <= 10 ? "#" + rank : "#10+";
+
+        QuestApp.renderLeaderboard(state.nickname);
+        QuestApp.confetti();
+      }
+
+      btn.addEventListener("click", verify);
+      input.addEventListener("keydown", e => { if (e.key === "Enter") verify(); });
+      input.addEventListener("input", () => {
+        input.style.borderColor = "";
+        msg.textContent = "";
+      });
+
+      QuestApp.renderLeaderboard();
+    })();
+  </script>
+</body>
+</html>

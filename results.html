@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🏆 Результаты — Волонтёрский Спринт</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .podium { display: flex; justify-content: center; align-items: flex-end; gap: 0.5rem; margin: 2rem 0; }
+    .podium-place {
+      text-align: center;
+      padding: 1rem 0.5rem;
+      border-radius: 8px 8px 0 0;
+      min-width: 100px;
+    }
+    .podium-place.first  { background: rgba(255,215,0,0.1); border: 1px solid rgba(255,215,0,0.3); border-bottom: none; min-height: 160px; }
+    .podium-place.second { background: rgba(192,192,192,0.1); border: 1px solid rgba(192,192,192,0.3); border-bottom: none; min-height: 120px; }
+    .podium-place.third  { background: rgba(205,127,50,0.1); border: 1px solid rgba(205,127,50,0.3); border-bottom: none; min-height: 100px; }
+    .podium-medal { font-size: 2rem; }
+    .podium-name { font-size: 0.85rem; color: var(--text); margin: 0.3rem 0; font-weight: 700; word-break: break-word; }
+    .podium-time { font-size: 0.75rem; color: var(--green); }
+    .podium-label { font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; margin-top: 0.3rem; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+      text-align: center;
+    }
+    .stat-value { font-size: 1.8rem; font-weight: 700; color: var(--green); }
+    .stat-label { font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; margin-top: 0.3rem; }
+    .controls { display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center; margin: 1rem 0; }
+    .controls .btn { font-size: 0.8rem; padding: 0.5rem 1rem; }
+    .empty-state { text-align: center; padding: 3rem 1rem; color: var(--text-dim); }
+    .empty-state .icon { font-size: 3rem; margin-bottom: 1rem; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="terminal">
+      <div class="terminal-header">
+        <div class="terminal-dot red"></div>
+        <div class="terminal-dot yellow"></div>
+        <div class="terminal-dot green"></div>
+        <span class="terminal-title">admin@results — leaderboard</span>
+      </div>
+      <div class="terminal-body">
+
+        <div class="flex items-center justify-center gap-2 mb-2">
+          <span style="font-size:2rem">🏆</span>
+          <div>
+            <div class="title" style="font-size:1.5rem">Результаты Спринта</div>
+            <div class="subtitle">Волонтёрский Спринт — Школа 21</div>
+          </div>
+        </div>
+
+        <div id="stats-section" class="stats-grid"></div>
+
+        <div id="podium-section"></div>
+
+        <div class="separator"></div>
+
+        <div class="controls">
+          <button id="btn-refresh" class="btn btn-blue">⟳ Обновить</button>
+          <button id="btn-export" class="btn">📋 Экспорт CSV</button>
+          <button id="btn-clear" class="btn" style="border-color:var(--red); color:var(--red)">🗑 Очистить</button>
+        </div>
+
+        <div class="separator"></div>
+
+        <div class="text-xs text-dim mb-1 text-center">📊 ПОЛНАЯ ТАБЛИЦА</div>
+        <div id="leaderboard-full" class="leaderboard"></div>
+
+      </div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script>
+    (function () {
+      const LEADERBOARD_KEY = "quest21_leaderboard";
+
+      function getLB() {
+        try { return JSON.parse(localStorage.getItem(LEADERBOARD_KEY)) || []; } catch { return []; }
+      }
+
+      function render() {
+        const lb = getLB();
+
+        // Stats
+        const total = lb.length;
+        const avgTime = total > 0 ? lb.reduce((s, e) => s + e.time, 0) / total : 0;
+        const bestTime = total > 0 ? lb[0].time : 0;
+        document.getElementById("stats-section").innerHTML = `
+          <div class="stat-card">
+            <div class="stat-value">${total}</div>
+            <div class="stat-label">Участников</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${bestTime ? QuestApp.formatTime(bestTime) : "—"}</div>
+            <div class="stat-label">Лучшее время</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${total > 0 ? QuestApp.formatTime(avgTime) : "—"}</div>
+            <div class="stat-label">Среднее время</div>
+          </div>
+        `;
+
+        // Podium
+        if (lb.length >= 1) {
+          const medals = ["🥇", "🥈", "🥉"];
+          const labels = ["Чемпион", "Серебро", "Бронза"];
+          const classes = ["first", "second", "third"];
+          let podiumHtml = '<div class="podium">';
+          for (let i = 0; i < Math.min(3, lb.length); i++) {
+            podiumHtml += `
+              <div class="podium-place ${classes[i]}">
+                <div class="podium-medal">${medals[i]}</div>
+                <div class="podium-name">${esc(lb[i].name)}</div>
+                <div class="podium-time">${lb[i].timeFormatted}</div>
+                <div class="podium-label">${labels[i]}</div>
+              </div>`;
+          }
+          podiumHtml += "</div>";
+          document.getElementById("podium-section").innerHTML = podiumHtml;
+        } else {
+          document.getElementById("podium-section").innerHTML = "";
+        }
+
+        // Full table
+        if (lb.length === 0) {
+          document.getElementById("leaderboard-full").innerHTML =
+            '<div class="empty-state"><div class="icon">🏁</div><div>Пока нет результатов.<br>Первый участник ещё в пути!</div></div>';
+          return;
+        }
+
+        const medals = ["🥇", "🥈", "🥉"];
+        document.getElementById("leaderboard-full").innerHTML = lb.map((e, i) => {
+          const rc = i === 0 ? "gold" : i === 1 ? "silver" : i === 2 ? "bronze" : "";
+          return `<div class="leaderboard-row">
+            <div class="leaderboard-rank ${rc}">${medals[i] || "#" + (i + 1)}</div>
+            <div class="leaderboard-name">${esc(e.name)}</div>
+            <div class="leaderboard-time">${e.timeFormatted}</div>
+          </div>`;
+        }).join("");
+      }
+
+      function esc(t) { const d = document.createElement("div"); d.textContent = t; return d.innerHTML; }
+
+      document.getElementById("btn-refresh").addEventListener("click", render);
+
+      document.getElementById("btn-export").addEventListener("click", () => {
+        const lb = getLB();
+        if (!lb.length) { alert("Нет данных для экспорта"); return; }
+        let csv = "Место,Имя,Время,Пароль,Дата\n";
+        lb.forEach((e, i) => {
+          csv += `${i + 1},"${e.name}",${e.timeFormatted},${e.password || ""},${e.date || ""}\n`;
+        });
+        const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "sprint-results.csv";
+        a.click();
+        URL.revokeObjectURL(url);
+      });
+
+      document.getElementById("btn-clear").addEventListener("click", () => {
+        if (confirm("Удалить ВСЕ результаты? Это действие необратимо!")) {
+          localStorage.removeItem(LEADERBOARD_KEY);
+          render();
+        }
+      });
+
+      render();
+      setInterval(render, 5000);
+    })();
+  </script>
+</body>
+</html>
