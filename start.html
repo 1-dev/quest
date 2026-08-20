@@ -8,7 +8,7 @@
   <style>
     .first-hint-box {
       background: rgba(255,215,0,0.05);
-      border: 2px solid var(--yellow);
+      border: 2px dashed var(--yellow);
       border-radius: 12px;
       padding: 1.5rem;
       margin: 1.5rem 0;
@@ -26,52 +26,6 @@
       font-size: 0.8rem;
       color: var(--blue);
       text-align: center;
-    }
-    .my-numbers-box {
-      background: rgba(0,255,156,0.05);
-      border: 2px solid var(--green);
-      border-radius: 12px;
-      padding: 1.2rem;
-      margin: 1rem 0;
-      text-align: center;
-    }
-    .my-numbers-label {
-      font-size: 0.75rem;
-      color: var(--text-dim);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-bottom: 0.6rem;
-    }
-    .my-numbers-list {
-      display: flex;
-      gap: 0.5rem;
-      justify-content: center;
-      flex-wrap: wrap;
-      margin: 0.5rem 0;
-    }
-    .my-num {
-      width: 44px;
-      height: 44px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.2rem;
-      font-weight: 700;
-      color: var(--green);
-      border: 2px solid var(--green);
-      border-radius: 8px;
-      background: var(--bg);
-      animation: digitReveal 0.4s cubic-bezier(0.34,1.56,0.64,1) backwards;
-    }
-    .my-num:nth-child(1) { animation-delay: 0.1s; }
-    .my-num:nth-child(2) { animation-delay: 0.2s; }
-    .my-num:nth-child(3) { animation-delay: 0.3s; }
-    .my-num:nth-child(4) { animation-delay: 0.4s; }
-    .my-num:nth-child(5) { animation-delay: 0.5s; }
-    .my-numbers-note {
-      font-size: 0.7rem;
-      color: var(--text-dim);
-      margin-top: 0.5rem;
     }
   </style>
 </head>
@@ -95,31 +49,20 @@
 ██║  ██║╚██████╔╝   ██║   ╚██████╔╝╚██████╔╝██║ ╚═╝ ██║
 ╚═╝  ╚═╝ ╚═════╝    ╚═╝    ╚═════╝  ╚═════╝ ╚═╝     ╚═╝
           </pre>
-
           <div class="title fade-in fade-in-delay-1">Волонтёрский Спринт</div>
           <div class="subtitle fade-in fade-in-delay-2">5 коммитов до успеха — Школа 21</div>
-
-          <div class="fade-in fade-in-delay-2">
-            <span class="status status-info">v3.1 — hint-then-digit</span>
-          </div>
-
           <div class="separator fade-in fade-in-delay-3"></div>
-
           <div class="fade-in fade-in-delay-3" style="line-height:1.8">
-            <p>Ты — новый модуль волонтёрской системы.</p>
-            <p class="mt-1">Чтобы получить максимальные права доступа, собери <strong class="text-green">5 цифровых подписей</strong> в разных точках кампуса.</p>
+            <p>Собери <strong class="text-green">5 цифровых подписей</strong> в разных точках кампуса.</p>
             <p class="mt-1">Порядок — <strong class="text-yellow">случайный</strong>. Навигация — <strong class="text-blue">только через QR-коды</strong>.</p>
           </div>
-
           <div class="separator fade-in fade-in-delay-4"></div>
-
           <div class="fade-in fade-in-delay-5 mt-2">
             <div class="input-group">
               <label class="input-label" for="nickname">// user.nickname</label>
               <input type="text" id="nickname" class="input" placeholder="Введи свой никнейм..." maxlength="30" autocomplete="off" autofocus>
             </div>
           </div>
-
           <div class="fade-in fade-in-delay-5 text-center mt-2">
             <button id="start-btn" class="btn btn-primary glow" style="font-size:1.1rem; padding:1rem 2.5rem;">
               ▶ git init --sprint
@@ -131,20 +74,14 @@
         <div id="phase-hint" style="display:none">
           <div class="title">Миссия начата</div>
           <div class="subtitle" id="welcome-name"></div>
-
           <div class="separator"></div>
-
-          <div class="no-digit-note">
-            Цифра выдаётся только после сканирования QR на локации.
-          </div>
-
+          <div class="no-digit-note">Цифра выдаётся только после сканирования QR на локации.</div>
           <div id="first-hint-box" class="first-hint-box">
             <div class="arrow">⬇</div>
             <div class="loc-name" id="first-loc-name"></div>
             <div class="loc-desc" id="first-loc-desc"></div>
             <div class="mt-1 text-xs text-dim">Ищи QR-код на этой локации</div>
           </div>
-
           <div class="hint-toggle" onclick="this.nextElementSibling.classList.toggle('visible')">
             💡 Нужна подробная подсказка?
           </div>
@@ -157,28 +94,29 @@
 
   <canvas id="confetti-canvas"></canvas>
   <script src="js/checkpoints.js"></script>
-  <script src="js/app.js"></script>
   <script>
+    const API = window.location.origin;
+
     (function () {
       const params = new URLSearchParams(location.search);
       const cpParam = params.get("cp");
+      const token = localStorage.getItem("quest_token");
 
-      if (cpParam !== null) {
-        const cpId = parseInt(cpParam);
-        const state = QuestApp.getState();
-        if (state && state.startTime && state.salt && state.order) {
-          location.replace("run.html?t=" + QuestApp.makeToken(cpId, state.salt));
-          return;
-        }
+      if (cpParam !== null && token) {
+        location.replace("run.html?t=" + token + "&cp=" + cpParam);
+        return;
       }
 
-      const reg = document.getElementById("phase-reg");
-      const hint = document.getElementById("phase-hint");
+      if (cpParam !== null && !token) {
+        document.getElementById("error-msg").innerHTML =
+          '<span class="status status-warning">⚠ Сначала введи ник, потом отсканируй QR</span>';
+      }
+
       const input = document.getElementById("nickname");
       const btn = document.getElementById("start-btn");
       const err = document.getElementById("error-msg");
 
-      function go() {
+      async function go() {
         const name = input.value.trim();
         if (!name) {
           input.style.borderColor = "var(--red)";
@@ -189,26 +127,62 @@
         btn.disabled = true;
         btn.textContent = "⟳ shuffling...";
 
-        const state = QuestApp.startQuest(name);
-        const firstCpId = state.order[0];
-        const firstCp = CHECKPOINTS[firstCpId];
+        try {
+          const res = await fetch(API + "/api/start", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({nickname: name}),
+          });
+          const data = await res.json();
 
-        document.getElementById("welcome-name").textContent = "Агент: " + name;
-        document.getElementById("first-loc-name").textContent = firstCp.emoji + " " + firstCp.title;
-        document.getElementById("first-loc-desc").textContent = firstCp.location;
-        document.getElementById("first-hint-text").textContent = firstCp.hint;
+          if (!data.ok) {
+            err.textContent = "// " + (data.detail || "неизвестный участник");
+            btn.disabled = false;
+            btn.textContent = "▶ git init --sprint";
+            return;
+          }
 
-        reg.style.display = "none";
-        hint.style.display = "block";
-        QuestApp.confetti();
+          localStorage.setItem("quest_token", data.token);
+          localStorage.setItem("quest_order", JSON.stringify(data.order));
+
+          const firstCp = CHECKPOINTS[data.order[0]];
+          document.getElementById("welcome-name").textContent = "Агент: " + name;
+          document.getElementById("first-loc-name").textContent = firstCp.emoji + " " + firstCp.title;
+          document.getElementById("first-loc-desc").textContent = firstCp.location;
+          document.getElementById("first-hint-text").textContent = firstCp.hint;
+
+          document.getElementById("phase-reg").style.display = "none";
+          document.getElementById("phase-hint").style.display = "block";
+
+          const canvas = document.getElementById("confetti-canvas");
+          const ctx = canvas.getContext("2d");
+          canvas.width = innerWidth; canvas.height = innerHeight;
+          const colors = ["#00ff9c","#00d4ff","#ffd700","#ff4757","#ff9f43"];
+          const pieces = Array.from({length:60}, () => ({
+            x:Math.random()*canvas.width, y:Math.random()*canvas.height-canvas.height,
+            w:Math.random()*8+4, h:Math.random()*6+3,
+            color:colors[Math.floor(Math.random()*colors.length)],
+            speed:Math.random()*3+2, angle:Math.random()*360,
+            spin:(Math.random()-0.5)*10, drift:(Math.random()-0.5)*2,
+          }));
+          let f=0;
+          (function anim() {
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+            for(const p of pieces){p.y+=p.speed;p.x+=p.drift;p.angle+=p.spin;
+              ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.angle*Math.PI/180);
+              ctx.fillStyle=p.color;ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);ctx.restore();}
+            if(++f<200)requestAnimationFrame(anim);else ctx.clearRect(0,0,canvas.width,canvas.height);
+          })();
+        } catch (e) {
+          err.textContent = "// ошибка сервера: " + e.message;
+          btn.disabled = false;
+          btn.textContent = "▶ git init --sprint";
+        }
       }
 
       btn.addEventListener("click", go);
       input.addEventListener("keydown", e => { if (e.key === "Enter") go(); });
-      input.addEventListener("input", () => {
-        input.style.borderColor = "";
-        err.textContent = "";
-      });
+      input.addEventListener("input", () => { input.style.borderColor = ""; err.textContent = ""; });
     })();
   </script>
 </body>

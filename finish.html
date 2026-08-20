@@ -20,7 +20,7 @@
         <div id="progress"></div>
 
         <div class="title">git push</div>
-        <div class="subtitle">Все коммиты собраны. Миссия завершена.</div>
+        <div class="subtitle" id="subtitle">Загрузка...</div>
 
         <div class="separator"></div>
 
@@ -50,12 +50,6 @@
         <div id="my-numbers-section" class="text-center" style="margin-top:1rem">
           <div class="text-xs text-dim mb-1">НОМЕРКИ УЧАСТНИКА:</div>
           <div id="my-numbers-finish" class="my-numbers-list" style="justify-content:center"></div>
-          <div id="numbers-input-area" class="mt-1">
-            <div class="text-xs text-dim">Номерки не найдены. Введи вручную:</div>
-            <div class="input-group" style="max-width:300px; margin:0.5rem auto 0">
-              <input type="text" id="numbers-input" class="input" placeholder="3, 7, 14" autocomplete="off">
-            </div>
-          </div>
         </div>
 
         <div class="separator"></div>
@@ -103,143 +97,210 @@
   </div>
 
   <canvas id="confetti-canvas"></canvas>
-  <script src="js/config.js"></script>
   <script src="js/checkpoints.js"></script>
-  <script src="js/app.js"></script>
   <script>
-    (function () {
-      const state = QuestApp.getState();
-      if (!state || !state.startTime) { location.href = "start.html"; return; }
+    const API = window.location.origin;
+    const DIGITS = [4, 2, 1, 3, 0];
 
-      if (state.currentIndex < 5) {
-        location.href = "run.html?cp=" + state.order[state.currentIndex];
+    function formatTime(ms) {
+      const t = Math.floor(ms / 1000);
+      const m = Math.floor(t / 60);
+      const s = t % 60;
+      const cs = Math.floor((ms % 1000) / 10);
+      return `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}.${String(cs).padStart(2,"0")}`;
+    }
+
+    function renderProgress(current) {
+      const el = document.getElementById("progress");
+      if (!el) return;
+      let steps = "";
+      for (let i = 0; i < 5; i++) {
+        const cls = i < current ? "completed" : i === current ? "active" : "";
+        steps += `<div class="progress-step ${cls}">${i < current ? "✓" : i+1}</div>`;
+      }
+      el.innerHTML = `
+        <div class="progress-label"><span>Прогресс</span><span>${current} / 5</span></div>
+        <div class="progress-bar"><div class="progress-fill" style="width:${current/5*100}%"></div></div>
+        <div class="progress-steps">${steps}</div>`;
+    }
+
+    function renderPasswordDisplay(digits) {
+      const el = document.getElementById("password-display");
+      if (!el) return;
+      el.innerHTML = Array.from({length:5}, (_, i) => {
+        const filled = digits[i] !== undefined;
+        return `<div class="password-digit ${filled?"filled":""}">${filled ? digits[i] : "?"}</div>`;
+      }).join("");
+    }
+
+    function renderLeaderboard(results, highlightName) {
+      const el = document.getElementById("leaderboard");
+      if (!el) return;
+      if (!results.length) {
+        el.innerHTML = '<p class="text-dim text-center" style="padding:2rem">Пока нет результатов.</p>';
         return;
       }
+      const medals = ["🥇", "🥈", "🥉"];
+      el.innerHTML = results.slice(0, 10).map((e, i) => {
+        const rc = i === 0 ? "gold" : i === 1 ? "silver" : i === 2 ? "bronze" : "";
+        const hl = e.nickname === highlightName ? " highlight" : "";
+        return `<div class="leaderboard-row${hl}">
+          <div class="leaderboard-rank ${rc}">${medals[i] || "#" + (i + 1)}</div>
+          <div class="leaderboard-name">${esc(e.nickname)}</div>
+          <div class="leaderboard-time">${e.time_formatted}</div>
+        </div>`;
+      }).join("");
+    }
 
-      QuestApp.stopTimerDisplay();
-      QuestApp.renderProgress(5);
+    function esc(t) { const d = document.createElement("div"); d.textContent = t; return d.innerHTML; }
 
-      const password = QuestApp.assemblePassword(state);
-      const time = QuestApp.getTime();
-      const timeStr = QuestApp.formatTime(time);
+    function confetti() {
+      const c = document.getElementById("confetti-canvas");
+      if (!c) return;
+      const ctx = c.getContext("2d");
+      c.width = innerWidth; c.height = innerHeight;
+      const colors = ["#00ff9c","#00d4ff","#ffd700","#ff4757","#ff9f43"];
+      const pieces = Array.from({length:100}, () => ({
+        x:Math.random()*c.width, y:Math.random()*c.height-c.height,
+        w:Math.random()*8+4, h:Math.random()*6+3,
+        color:colors[Math.floor(Math.random()*colors.length)],
+        speed:Math.random()*3+2, angle:Math.random()*360,
+        spin:(Math.random()-0.5)*10, drift:(Math.random()-0.5)*2,
+      }));
+      let f=0;
+      (function anim() {
+        ctx.clearRect(0,0,c.width,c.height);
+        for(const p of pieces){p.y+=p.speed;p.x+=p.drift;p.angle+=p.spin;
+          ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.angle*Math.PI/180);
+          ctx.fillStyle=p.color;ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);ctx.restore();}
+        if(++f<300)requestAnimationFrame(anim);else ctx.clearRect(0,0,c.width,c.height);
+      })();
+    }
 
-      document.getElementById("agent-name").textContent = state.nickname;
-      document.getElementById("password-code").textContent = '"' + password + '"';
-      document.getElementById("time-code").textContent = '"' + timeStr + '"';
-      document.getElementById("finish-time").textContent = timeStr;
+    (async function () {
+      const token = localStorage.getItem("quest_token");
+      if (!token) { location.href = "start.html"; return; }
 
-      const digits = password.split("").map(Number);
-      QuestApp.renderPasswordDisplay(digits);
+      try {
+        // Load progress from server
+        const progRes = await fetch(API + "/api/progress?token=" + token);
+        if (!progRes.ok) { location.href = "start.html"; return; }
+        const prog = await progRes.json();
 
-      const routeLabels = state.order.map((id, i) => {
-        const cp = CHECKPOINTS[id];
-        return `<span class="text-green">${i + 1}</span>. ${cp.emoji} ${cp.title}`;
-      });
-      document.getElementById("route-display").innerHTML = routeLabels.join(" → ");
-
-      if (state.myNumbers && state.myNumbers.length) {
-        document.getElementById("my-numbers-finish").innerHTML = state.myNumbers.map(n =>
-          '<div class="my-num">' + n + '</div>'
-        ).join("");
-        document.getElementById("numbers-input-area").style.display = "none";
-      }
-
-      const numbersInput = document.getElementById("numbers-input");
-      numbersInput.addEventListener("input", () => {
-        const raw = numbersInput.value.replace(/[^0-9,\s]/g, "");
-        numbersInput.value = raw;
-        const nums = raw.split(/[,\s]+/).map(Number).filter(n => n >= 1 && n <= 21);
-        document.getElementById("my-numbers-finish").innerHTML = nums.map(n =>
-          '<div class="my-num">' + n + '</div>'
-        ).join("");
-      });
-
-      QuestApp.confetti();
-
-      let timerInterval = setInterval(() => {
-        const el = document.getElementById("finish-time");
-        if (el) el.textContent = QuestApp.formatTime(QuestApp.getTime());
-      }, 100);
-
-      const input = document.getElementById("password-input");
-      const btn = document.getElementById("submit-btn");
-      const msg = document.getElementById("verify-msg");
-
-      async function verify() {
-        const val = input.value.trim();
-        if (!val) {
-          input.style.borderColor = "var(--red)";
-          msg.textContent = "// ошибка: password required";
-          msg.style.color = "var(--red)";
-          input.focus();
-          return;
-        }
-        if (val !== password) {
-          input.style.borderColor = "var(--red)";
-          msg.textContent = "// ошибка: неверный пароль. Попробуй снова.";
-          msg.style.color = "var(--red)";
-          input.value = "";
-          input.focus();
+        if (prog.current_index < 5) {
+          location.href = "run.html";
           return;
         }
 
-        clearInterval(timerInterval);
-        btn.disabled = true;
-        btn.textContent = "⟳ отправка...";
+        const order = prog.order;
+        const completed = prog.completed;
+        const nickname = prog.nickname;
+        const startTime = new Date(prog.session.started_at).getTime();
+        const elapsed = Date.now() - startTime;
 
-        // Try to fetch numbers from Google Sheets
-        let assignedNums = [];
-        if (typeof API_URL !== "undefined" && API_URL) {
-          try {
-            const res = await fetch(API_URL + "?action=numbers&name=" + encodeURIComponent(state.nickname) + "&t=" + Date.now());
-            const data = await res.json();
-            if (data.ok && data.numbers && data.numbers.length) {
-              assignedNums = data.numbers;
+        // Build password
+        const collectedDigits = completed.map(id => DIGITS[id]);
+        const pw = ["","","","",""];
+        order.forEach((cpId, i) => { pw[cpId] = String(collectedDigits[i]); });
+        const password = pw.join("");
+
+        // Render
+        renderProgress(5);
+        document.getElementById("subtitle").textContent = "Все коммиты собраны. Миссия завершена.";
+        document.getElementById("agent-name").textContent = nickname;
+        document.getElementById("password-code").textContent = '"' + password + '"';
+        document.getElementById("time-code").textContent = '"' + formatTime(elapsed) + '"';
+        document.getElementById("finish-time").textContent = formatTime(elapsed);
+        renderPasswordDisplay(collectedDigits);
+
+        const routeLabels = order.map((id, i) => {
+          const cp = CHECKPOINTS[id];
+          return `<span class="text-green">${i + 1}</span>. ${cp.emoji} ${cp.title}`;
+        });
+        document.getElementById("route-display").innerHTML = routeLabels.join(" → ");
+
+        // Hide numbers until password is verified
+        document.getElementById("my-numbers-section").style.display = "none";
+
+        confetti();
+
+        // Keep timer updating
+        let timerInterval = setInterval(() => {
+          document.getElementById("finish-time").textContent = formatTime(Date.now() - startTime);
+        }, 100);
+
+        // Load leaderboard
+        const lbRes = await fetch(API + "/api/results");
+        const results = await lbRes.json();
+        renderLeaderboard(results, nickname);
+
+        // Password verify
+        const input = document.getElementById("password-input");
+        const btn = document.getElementById("submit-btn");
+        const msg = document.getElementById("verify-msg");
+
+        async function verify() {
+          const val = input.value.trim();
+          if (!val) {
+            input.style.borderColor = "var(--red)";
+            msg.textContent = "// ошибка: password required";
+            msg.style.color = "var(--red)";
+            input.focus();
+            return;
+          }
+          if (val !== password) {
+            input.style.borderColor = "var(--red)";
+            msg.textContent = "// ошибка: неверный пароль. Попробуй снова.";
+            msg.style.color = "var(--red)";
+            input.value = "";
+            input.focus();
+            return;
+          }
+
+          clearInterval(timerInterval);
+          btn.disabled = true;
+          btn.textContent = "⟳ отправка...";
+
+          // Submit to server
+          await fetch(API + "/api/finish", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({token, time_ms: Date.now() - startTime, password}),
+          });
+
+          document.getElementById("form-section").style.display = "none";
+          document.getElementById("result-section").style.display = "block";
+          document.getElementById("finish-time").textContent = formatTime(Date.now() - startTime);
+
+          // Show numbers after password verification
+          if (prog.numbers) {
+            const nums = prog.numbers.split(",").map(s => parseInt(s.trim())).filter(n => n >= 1 && n <= 21);
+            if (nums.length) {
+              document.getElementById("my-numbers-section").style.display = "block";
+              document.getElementById("my-numbers-finish").innerHTML = nums.map(n =>
+                '<div class="my-num">' + n + '</div>'
+              ).join("");
             }
-          } catch (e) {}
+          }
+
+          // Re-fetch leaderboard
+          const lbRes2 = await fetch(API + "/api/results");
+          const results2 = await lbRes2.json();
+          renderLeaderboard(results2, nickname);
+
+          const rank = results2.findIndex(e => e.nickname === nickname) + 1;
+          document.getElementById("player-rank").textContent = rank >= 0 ? "#" + rank : "#10+";
+
+          confetti();
         }
 
-        // Fallback: read from input
-        if (!assignedNums.length) {
-          const rawNums = numbersInput.value.replace(/[^0-9,\s]/g, "");
-          assignedNums = rawNums.split(/[,\s]+/).map(Number).filter(n => n >= 1 && n <= 21);
-        }
+        btn.addEventListener("click", verify);
+        input.addEventListener("keydown", e => { if (e.key === "Enter") verify(); });
+        input.addEventListener("input", () => { input.style.borderColor = ""; msg.textContent = ""; });
 
-        if (assignedNums.length) {
-          state.myNumbers = assignedNums;
-          QuestApp.setState(state);
-        }
-
-        await QuestApp.finishQuest();
-
-        document.getElementById("form-section").style.display = "none";
-        document.getElementById("result-section").style.display = "block";
-        document.getElementById("finish-time").textContent = timeStr;
-
-        // Show numbers
-        if (state.myNumbers && state.myNumbers.length) {
-          document.getElementById("my-numbers-finish").innerHTML = state.myNumbers.map(n =>
-            '<div class="my-num">' + n + '</div>'
-          ).join("");
-          document.getElementById("numbers-input-area").style.display = "none";
-        }
-
-        const lb = await QuestApp.getLeaderboard();
-        const rank = lb.findIndex(e => e.name === state.nickname && e.time === time) + 1;
-        document.getElementById("player-rank").textContent = rank >= 0 ? "#" + (rank + 1) : "#10+";
-
-        QuestApp.renderLeaderboard(state.nickname);
-        QuestApp.confetti();
+      } catch (e) {
+        document.getElementById("subtitle").textContent = "Ошибка сервера: " + e.message;
       }
-
-      btn.addEventListener("click", verify);
-      input.addEventListener("keydown", e => { if (e.key === "Enter") verify(); });
-      input.addEventListener("input", () => {
-        input.style.borderColor = "";
-        msg.textContent = "";
-      });
-
-      QuestApp.renderLeaderboard();
     })();
   </script>
 </body>

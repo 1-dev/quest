@@ -64,7 +64,6 @@
         <div class="controls">
           <button id="btn-refresh" class="btn btn-blue">⟳ Обновить</button>
           <button id="btn-export" class="btn">📋 Экспорт CSV</button>
-          <button id="btn-clear" class="btn" style="border-color:var(--red); color:var(--red)">🗑 Очистить</button>
         </div>
 
         <div class="separator"></div>
@@ -76,102 +75,98 @@
     </div>
   </div>
 
-  <script src="js/config.js"></script>
-  <script src="js/app.js"></script>
   <script>
-    (function () {
+    const API = window.location.origin;
 
-      async function render() {
-        const lb = await QuestApp.getLeaderboard();
+    function formatTime(ms) {
+      const t = Math.floor(ms / 1000);
+      const m = Math.floor(t / 60);
+      const s = t % 60;
+      const cs = Math.floor((ms % 1000) / 10);
+      return `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}.${String(cs).padStart(2,"0")}`;
+    }
 
-        // Stats
-        const total = lb.length;
-        const avgTime = total > 0 ? lb.reduce((s, e) => s + e.time, 0) / total : 0;
-        const bestTime = total > 0 ? lb[0].time : 0;
-        document.getElementById("stats-section").innerHTML = `
-          <div class="stat-card">
-            <div class="stat-value">${total}</div>
-            <div class="stat-label">Участников</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-value">${bestTime ? QuestApp.formatTime(bestTime) : "—"}</div>
-            <div class="stat-label">Лучшее время</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-value">${total > 0 ? QuestApp.formatTime(avgTime) : "—"}</div>
-            <div class="stat-label">Среднее время</div>
-          </div>
-        `;
+    function esc(t) { const d = document.createElement("div"); d.textContent = t; return d.innerHTML; }
 
-        // Podium
-        if (lb.length >= 1) {
-          const medals = ["🥇", "🥈", "🥉"];
-          const labels = ["Чемпион", "Серебро", "Бронза"];
-          const classes = ["first", "second", "third"];
-          let podiumHtml = '<div class="podium">';
-          for (let i = 0; i < Math.min(3, lb.length); i++) {
-            podiumHtml += `
-              <div class="podium-place ${classes[i]}">
-                <div class="podium-medal">${medals[i]}</div>
-                <div class="podium-name">${esc(lb[i].name)}</div>
-                <div class="podium-time">${lb[i].timeFormatted}</div>
-                <div class="podium-label">${labels[i]}</div>
-              </div>`;
-          }
-          podiumHtml += "</div>";
-          document.getElementById("podium-section").innerHTML = podiumHtml;
-        } else {
-          document.getElementById("podium-section").innerHTML = "";
-        }
+    async function render() {
+      const lb = await fetch(API + "/api/results").then(r => r.json()).catch(() => []);
 
-        // Full table
-        if (lb.length === 0) {
-          document.getElementById("leaderboard-full").innerHTML =
-            '<div class="empty-state"><div class="icon">🏁</div><div>Пока нет результатов.<br>Первый участник ещё в пути!</div></div>';
-          return;
-        }
+      // Stats
+      const total = lb.length;
+      const avgTime = total > 0 ? lb.reduce((s, e) => s + e.time_ms, 0) / total : 0;
+      const bestTime = total > 0 ? lb[0].time_ms : 0;
+      document.getElementById("stats-section").innerHTML = `
+        <div class="stat-card">
+          <div class="stat-value">${total}</div>
+          <div class="stat-label">Участников</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${bestTime ? formatTime(bestTime) : "—"}</div>
+          <div class="stat-label">Лучшее время</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${total > 0 ? formatTime(avgTime) : "—"}</div>
+          <div class="stat-label">Среднее время</div>
+        </div>
+      `;
 
+      // Podium
+      if (lb.length >= 1) {
         const medals = ["🥇", "🥈", "🥉"];
-        document.getElementById("leaderboard-full").innerHTML = lb.map((e, i) => {
-          const rc = i === 0 ? "gold" : i === 1 ? "silver" : i === 2 ? "bronze" : "";
-          return `<div class="leaderboard-row">
-            <div class="leaderboard-rank ${rc}">${medals[i] || "#" + (i + 1)}</div>
-            <div class="leaderboard-name">${esc(e.name)}</div>
-            <div class="leaderboard-time">${e.timeFormatted}</div>
-          </div>`;
-        }).join("");
+        const labels = ["Чемпион", "Серебро", "Бронза"];
+        const classes = ["first", "second", "third"];
+        let podiumHtml = '<div class="podium">';
+        for (let i = 0; i < Math.min(3, lb.length); i++) {
+          podiumHtml += `
+            <div class="podium-place ${classes[i]}">
+              <div class="podium-medal">${medals[i]}</div>
+              <div class="podium-name">${esc(lb[i].nickname)}</div>
+              <div class="podium-time">${lb[i].time_formatted}</div>
+              <div class="podium-label">${labels[i]}</div>
+            </div>`;
+        }
+        podiumHtml += "</div>";
+        document.getElementById("podium-section").innerHTML = podiumHtml;
+      } else {
+        document.getElementById("podium-section").innerHTML = "";
       }
 
-      function esc(t) { const d = document.createElement("div"); d.textContent = t; return d.innerHTML; }
+      // Full table
+      if (lb.length === 0) {
+        document.getElementById("leaderboard-full").innerHTML =
+          '<div class="empty-state"><div class="icon">🏁</div><div>Пока нет результатов.<br>Первый участник ещё в пути!</div></div>';
+        return;
+      }
 
-      document.getElementById("btn-refresh").addEventListener("click", render);
+      const medals = ["🥇", "🥈", "🥉"];
+      document.getElementById("leaderboard-full").innerHTML = lb.map((e, i) => {
+        const rc = i === 0 ? "gold" : i === 1 ? "silver" : i === 2 ? "bronze" : "";
+        return `<div class="leaderboard-row">
+          <div class="leaderboard-rank ${rc}">${medals[i] || "#" + (i + 1)}</div>
+          <div class="leaderboard-name">${esc(e.nickname)}</div>
+          <div class="leaderboard-time">${e.time_formatted}</div>
+        </div>`;
+      }).join("");
+    }
 
-      document.getElementById("btn-export").addEventListener("click", async () => {
-        const lb = await QuestApp.getLeaderboard();
-        if (!lb.length) { alert("Нет данных для экспорта"); return; }
-        let csv = "Место,Имя,Время,Пароль,Дата\n";
-        lb.forEach((e, i) => {
-          csv += `${i + 1},"${e.name}",${e.timeFormatted},${e.password || ""},${e.date || ""}\n`;
-        });
-        const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "sprint-results.csv";
-        a.click();
-        URL.revokeObjectURL(url);
+    document.getElementById("btn-refresh").addEventListener("click", render);
+
+    document.getElementById("btn-export").addEventListener("click", async () => {
+      const lb = await fetch(API + "/api/results").then(r => r.json()).catch(() => []);
+      if (!lb.length) { alert("Нет данных для экспорта"); return; }
+      let csv = "Место,Имя,Время,Пароль,Номерки,Дата\n";
+      lb.forEach((e, i) => {
+        csv += `${i+1},"${e.nickname}",${e.time_formatted},${e.password},"${e.numbers}",${e.created_at}\n`;
       });
+      const blob = new Blob(["\uFEFF" + csv], {type:"text/csv;charset=utf-8;"});
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "sprint-results.csv";
+      a.click();
+    });
 
-      document.getElementById("btn-clear").addEventListener("click", () => {
-        if (confirm("Удалить ВСЕ результаты? Это действие необратимо!")) {
-          localStorage.removeItem(LEADERBOARD_KEY);
-          render();
-        }
-      });
-
-      render();
-      setInterval(render, 5000);
-    })();
+    render();
+    setInterval(render, 5000);
   </script>
 </body>
 </html>

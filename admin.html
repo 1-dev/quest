@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>⚙️ Админ-панель — Спринт</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1.5rem; }
+    @media (max-width: 700px) { .admin-grid { grid-template-columns: 1fr; } }
+    .admin-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.5rem;
+    }
+    .admin-card h3 { color: var(--green); font-size: 1rem; margin-bottom: 1rem; }
+    .admin-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+    .admin-table th { text-align: left; color: var(--text-dim); padding: 0.4rem; border-bottom: 1px solid var(--border); }
+    .admin-table td { padding: 0.4rem; border-bottom: 1px solid var(--border); }
+    .admin-table tr:hover { background: var(--bg-card-hover); }
+    .tag { display:inline-block; padding:0.1rem 0.4rem; border-radius:4px; font-size:0.7rem; margin:0.1rem; }
+    .tag-green { background:rgba(0,255,156,0.1); color:var(--green); border:1px solid rgba(0,255,156,0.3); }
+    .tag-blue { background:rgba(0,212,255,0.1); color:var(--blue); border:1px solid rgba(0,212,255,0.3); }
+    .btn-sm { font-size:0.7rem; padding:0.3rem 0.6rem; }
+    .status-msg { padding:0.5rem; border-radius:6px; font-size:0.8rem; margin-top:0.5rem; }
+    .status-ok { background:rgba(0,255,156,0.1); color:var(--green); }
+    .status-err { background:rgba(255,71,87,0.1); color:var(--red); }
+    .game-setup { text-align:center; padding:1rem; }
+    .game-setup .big-num { font-size:3rem; color:var(--green); font-weight:700; line-height:1; }
+    .game-setup .label { font-size:0.8rem; color:var(--text-dim); margin-top:0.3rem; }
+    .rename-input { background:transparent; border:1px solid var(--border); color:var(--text); padding:0.2rem 0.4rem; border-radius:4px; font-size:0.8rem; width:120px; }
+    .rename-input:focus { border-color:var(--green); outline:none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="terminal">
+      <div class="terminal-header">
+        <div class="terminal-dot red"></div>
+        <div class="terminal-dot yellow"></div>
+        <div class="terminal-dot green"></div>
+        <span class="terminal-title">admin@dashboard</span>
+      </div>
+      <div class="terminal-body">
+
+        <div class="title" style="font-size:1.5rem">⚙️ Админ-панель</div>
+        <div class="subtitle">Управление спринтом</div>
+
+        <!-- Game Setup -->
+        <div class="admin-card" style="margin-top:1.5rem">
+          <h3>🎮 Настройка игры</h3>
+          <div id="game-setup-section">
+            <div class="game-setup">
+              <div class="text-sm mb-1">Сколько участников?</div>
+              <div class="flex items-center justify-center gap-1">
+                <input type="number" id="player-count" class="input" value="15" min="1" max="21" style="width:80px; text-align:center; font-size:1.2rem">
+                <button id="btn-generate" class="btn btn-primary glow">Сформировать наборы</button>
+              </div>
+              <div class="text-xs text-dim mt-1">Числа 1-21 будут распределены без повторений</div>
+            </div>
+          </div>
+          <div id="game-generated" style="display:none">
+            <div class="flex items-center justify-between mb-2">
+              <div class="game-setup">
+                <div class="big-num" id="gen-count">0</div>
+                <div class="label">участников</div>
+              </div>
+              <div class="game-setup">
+                <div class="big-num" style="color:var(--yellow)">1-21</div>
+                <div class="label">числа без повторений</div>
+              </div>
+              <div>
+                <button id="btn-reset-game" class="btn btn-sm" style="border-color:var(--red);color:var(--red)">Сбросить игру</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="admin-grid">
+
+          <!-- Participants -->
+          <div class="admin-card">
+            <h3>👤 Участники (<span id="p-count">0</span>)</h3>
+            <div class="flex gap-1 mb-2">
+              <input type="text" id="p-name" class="input" placeholder="Никнейм" style="flex:1">
+              <input type="text" id="p-nums" class="input" placeholder="Номерки (3,7,14)" style="width:140px">
+              <button id="p-add" class="btn btn-primary btn-sm">+</button>
+            </div>
+            <div class="flex gap-1 mb-2">
+              <label class="btn btn-sm" style="cursor:pointer">
+                📄 Импорт CSV
+                <input type="file" id="p-import" accept=".csv" style="display:none">
+              </label>
+              <button id="p-clear" class="btn btn-sm" style="border-color:var(--red);color:var(--red)">🗑 Очистить</button>
+            </div>
+            <div id="p-status"></div>
+            <div id="p-list" style="max-height:400px;overflow-y:auto"></div>
+          </div>
+
+          <!-- Results -->
+          <div class="admin-card">
+            <h3>🏆 Результаты (<span id="r-count">0</span>)</h3>
+            <div class="flex gap-1 mb-2">
+              <button id="r-refresh" class="btn btn-blue btn-sm">⟳ Обновить</button>
+              <button id="r-export" class="btn btn-sm">📋 CSV</button>
+              <button id="r-clear" class="btn btn-sm" style="border-color:var(--red);color:var(--red)">🗑 Очистить</button>
+            </div>
+            <div id="r-list" style="max-height:400px;overflow-y:auto"></div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API = window.location.origin;
+
+    async function api(path, opts) {
+      const res = await fetch(API + path, opts);
+      return res.json();
+    }
+
+    function showMsg(el, text, ok) {
+      el.innerHTML = '<div class="status-msg ' + (ok ? 'status-ok' : 'status-err') + '">' + text + '</div>';
+      setTimeout(() => el.innerHTML = '', 4000);
+    }
+
+    function esc(t) { const d = document.createElement("div"); d.textContent = t; return d.innerHTML; }
+
+    // ---- Game Setup ----
+    document.getElementById("btn-generate").addEventListener("click", async () => {
+      const count = parseInt(document.getElementById("player-count").value);
+      if (!count || count < 1 || count > 21) {
+        alert("Введите число от 1 до 21");
+        return;
+      }
+      if (!confirm(`Сформировать наборы для ${count} участников? Все текущие данные будут удалены.`)) return;
+
+      const btn = document.getElementById("btn-generate");
+      btn.disabled = true;
+      btn.textContent = "⟳ Генерация...";
+
+      const res = await api("/api/participants/generate", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({num_participants: count}),
+      });
+
+      btn.disabled = false;
+      btn.textContent = "Сформировать наборы";
+
+      if (res.ok) {
+        document.getElementById("game-setup-section").style.display = "none";
+        document.getElementById("game-generated").style.display = "block";
+        document.getElementById("gen-count").textContent = count;
+        loadParticipants();
+      }
+    });
+
+    document.getElementById("btn-reset-game").addEventListener("click", async () => {
+      if (!confirm("Сбросить игру? Все участники и результаты будут удалены.")) return;
+      await api("/api/participants/clear", {method: "POST"});
+      await api("/api/results/clear", {method: "POST"});
+      document.getElementById("game-setup-section").style.display = "block";
+      document.getElementById("game-generated").style.display = "none";
+      loadParticipants();
+      loadResults();
+    });
+
+    // ---- Participants ----
+    async function loadParticipants() {
+      const list = await api("/api/participants");
+      document.getElementById("p-count").textContent = list.length;
+
+      if (list.length) {
+        document.getElementById("game-setup-section").style.display = "none";
+        document.getElementById("game-generated").style.display = "block";
+        document.getElementById("gen-count").textContent = list.length;
+      }
+
+      document.getElementById("p-list").innerHTML = list.length
+        ? '<table class="admin-table"><tr><th>#</th><th>Участник</th><th>Номерки</th><th></th></tr>' +
+          list.map((p, i) =>
+            '<tr><td class="text-dim">' + (i+1) + '</td>' +
+            '<td><input class="rename-input" value="' + esc(p.nickname) + '" data-old="' + esc(p.nickname) + '" onblur="renameParticipant(this)"></td>' +
+            '<td>' +
+            (p.numbers ? p.numbers.split(",").map(n => '<span class="tag tag-green">' + n.trim() + '</span>').join("") : '<span class="tag tag-blue">нет</span>') +
+            '</td>' +
+            '<td><button class="btn btn-sm" style="border-color:var(--red);color:var(--red);padding:0.2rem 0.4rem" onclick="delParticipant(\'' + esc(p.nickname) + '\')">✕</button></td></tr>'
+          ).join("") + '</table>'
+        : '<div class="text-dim text-center" style="padding:1rem">Нет участников. Начните игру выше.</div>';
+    }
+
+    window.renameParticipant = async function(el) {
+      const oldName = el.dataset.old;
+      const newName = el.value.trim();
+      if (!newName || newName === oldName) return;
+      const res = await api("/api/participants/rename", {
+        method: "PUT",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({old_nickname: oldName, new_nickname: newName}),
+      });
+      if (!res.ok) {
+        el.value = oldName;
+        showMsg(document.getElementById("p-status"), "✗ Не удалось переименовать", false);
+      }
+      loadParticipants();
+    };
+
+    document.getElementById("p-add").addEventListener("click", async () => {
+      const name = document.getElementById("p-name").value.trim();
+      const nums = document.getElementById("p-nums").value.trim();
+      if (!name) return;
+      const res = await api("/api/participants", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({nickname: name, numbers: nums}),
+      });
+      showMsg(document.getElementById("p-status"), res.ok ? "✓ " + name + " добавлен" : "✗ Ошибка", res.ok);
+      document.getElementById("p-name").value = "";
+      document.getElementById("p-nums").value = "";
+      loadParticipants();
+    });
+
+    window.delParticipant = async function(name) {
+      if (!confirm("Удалить " + name + "?")) return;
+      await api("/api/participants/" + encodeURIComponent(name), {method: "DELETE"});
+      loadParticipants();
+    };
+
+    document.getElementById("p-import").addEventListener("change", async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const form = new FormData();
+      form.append("file", file);
+      const res = await api("/api/participants/import", {method: "POST", body: form});
+      showMsg(document.getElementById("p-status"), res.ok ? "✓ Импортировано: " + res.count + " участников" : "✗ Ошибка", res.ok);
+      loadParticipants();
+      e.target.value = "";
+    });
+
+    document.getElementById("p-clear").addEventListener("click", async () => {
+      if (!confirm("Удалить ВСЕХ участников?")) return;
+      await api("/api/participants/clear", {method: "POST"});
+      loadParticipants();
+    });
+
+    // ---- Results ----
+    async function loadResults() {
+      const list = await api("/api/results");
+      document.getElementById("r-count").textContent = list.length;
+      if (!list.length) {
+        document.getElementById("r-list").innerHTML = '<div class="text-dim text-center" style="padding:1rem">Нет результатов</div>';
+        return;
+      }
+      const medals = ["🥇", "🥈", "🥉"];
+      document.getElementById("r-list").innerHTML =
+        '<table class="admin-table"><tr><th>#</th><th>Имя</th><th>Время</th><th>Пароль</th><th>Номерки</th></tr>' +
+        list.map((r, i) =>
+          '<tr><td>' + (medals[i] || (i+1)) + '</td><td>' + esc(r.nickname) + '</td><td>' +
+          r.time_formatted + '</td><td>' + r.password + '</td><td>' +
+          (r.numbers ? r.numbers.split(",").map(n => '<span class="tag tag-green">' + n.trim() + '</span>').join("") : "—") +
+          '</td></tr>'
+        ).join("") + '</table>';
+    }
+
+    document.getElementById("r-refresh").addEventListener("click", loadResults);
+
+    document.getElementById("r-export").addEventListener("click", async () => {
+      const list = await api("/api/results");
+      if (!list.length) return alert("Нет данных");
+      let csv = "\uFEFFМесто,Имя,Время,Пароль,Номерки,Дата\n";
+      list.forEach((r, i) => {
+        csv += `${i+1},"${r.nickname}",${r.time_formatted},${r.password},"${r.numbers}",${r.created_at}\n`;
+      });
+      const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "sprint-results.csv";
+      a.click();
+    });
+
+    document.getElementById("r-clear").addEventListener("click", async () => {
+      if (!confirm("Удалить ВСЕ результаты?")) return;
+      await api("/api/results/clear", {method: "POST"});
+      loadResults();
+    });
+
+    loadParticipants();
+    loadResults();
+    setInterval(loadResults, 5000);
+  </script>
+</body>
+</html>
