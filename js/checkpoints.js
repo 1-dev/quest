@@ -6,7 +6,7 @@ const CHECKPOINTS = [
     location: "ARM в кластере Lepton, ряд C",
     codeComment: "// Получен новый запрос от агента...",
     codeLine: 'const <span class="variable">mission</span> = <span class="function">decode</span>(<span class="string">"latest-transmission"</span>);',
-    riddle: "Среди машин, чьи имена — из мира частиц, найди ряд, третий по алфавиту. Тот, кто краснеет от ошибок, но не имеет сердца, ждёт тебя там.",
+    riddle: "Машины здесь названы в честь мельчайших частиц. Одно из имён — перевод греческого «тонкий». Найди его и ищи третий ряд по алфавиту.",
     emoji: "🔍",
   },
   {
