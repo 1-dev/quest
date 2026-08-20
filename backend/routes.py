@@ -1,15 +1,9 @@
-from fastapi import APIRouter, HTTPException, UploadFile, File
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from typing import Optional
-import csv
-import io
 
 from . import db
 
 router = APIRouter()
-
-DIGITS = [4, 2, 1, 3, 0]
 
 
 # ---- Models ----
@@ -29,89 +23,54 @@ class FinishRequest(BaseModel):
     password: str
 
 
-class ParticipantRequest(BaseModel):
-    nickname: str
-    numbers: str = ""
-
-
 class GenerateGameRequest(BaseModel):
     num_participants: int
 
 
-class RenameParticipantRequest(BaseModel):
-    old_nickname: str
-    new_nickname: str
+# ---- Game ----
+
+@router.post("/api/game/generate")
+def generate_game(req: GenerateGameRequest):
+    if req.num_participants < 1 or req.num_participants > 21:
+        raise HTTPException(400, "Количество участников: 1-21")
+    sets = db.generate_game(req.num_participants)
+    return {"ok": True, "slots": sets}
 
 
-# ---- Participant endpoints ----
-
-@router.get("/api/participants")
-def list_participants():
-    return db.get_participants()
+@router.get("/api/game/pool")
+def get_pool():
+    return db.get_game_pool()
 
 
-@router.post("/api/participants")
-def add_participant(req: ParticipantRequest):
-    ok = db.add_participant(req.nickname, req.numbers)
-    if not ok:
-        raise HTTPException(400, "Nickname already exists")
-    return {"ok": True}
+@router.get("/api/game/status")
+def get_pool_status():
+    return db.get_pool_status()
 
 
-@router.delete("/api/participants/{nickname}")
-def delete_participant(nickname: str):
+@router.post("/api/game/clear")
+def clear_game():
     conn = db.get_db()
-    conn.execute("DELETE FROM participants WHERE nickname = ?", (nickname,))
+    conn.execute("DELETE FROM participants")
+    conn.execute("DELETE FROM game_pool")
+    conn.execute("DELETE FROM sessions")
+    conn.execute("DELETE FROM checkpoints")
+    conn.execute("DELETE FROM results")
     conn.commit()
     conn.close()
     return {"ok": True}
-
-
-@router.post("/api/participants/clear")
-def clear_participants():
-    db.clear_participants()
-    return {"ok": True}
-
-
-@router.post("/api/participants/generate")
-def generate_game(req: GenerateGameRequest):
-    if req.num_participants < 1 or req.num_participants > 21:
-        raise HTTPException(400, "Number of participants must be 1-21")
-    sets = db.generate_game(req.num_participants)
-    return {"ok": True, "participants": sets}
-
-
-@router.put("/api/participants/rename")
-def rename_participant(req: RenameParticipantRequest):
-    ok = db.update_participant_nickname(req.old_nickname, req.new_nickname)
-    if not ok:
-        raise HTTPException(400, "Could not rename (nickname may already exist)")
-    return {"ok": True}
-
-
-@router.post("/api/participants/import")
-async def import_participants_csv(file: UploadFile = File(...)):
-    content = await file.read()
-    text = content.decode("utf-8-sig")
-    reader = csv.reader(io.StringIO(text))
-    header = next(reader, None)
-    sets = []
-    for row in reader:
-        if len(row) >= 2:
-            name = row[0].strip()
-            nums = [int(n.strip()) for n in row[1].split(",") if n.strip().isdigit()]
-            sets.append((name, nums))
-    db.import_participants(sets)
-    return {"ok": True, "count": len(sets)}
 
 
 # ---- Quest flow ----
 
 @router.post("/api/start")
 def start_quest(req: StartRequest):
-    session = db.create_session(req.nickname)
+    nickname = req.nickname.strip()
+    if not nickname:
+        raise HTTPException(400, "Nickname required")
+
+    session = db.create_session(nickname)
     if not session:
-        raise HTTPException(400, "Unknown participant. Register first.")
+        raise HTTPException(400, "Нет свободных слотов. Игра заполнена.")
     return {
         "ok": True,
         "token": session["token"],

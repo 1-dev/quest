@@ -25,6 +25,14 @@ def init_db():
             created_at TEXT DEFAULT (datetime('now'))
         );
 
+        CREATE TABLE IF NOT EXISTS game_pool (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            numbers TEXT NOT NULL,
+            assigned_to INTEGER DEFAULT NULL,
+            created_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (assigned_to) REFERENCES participants(id)
+        );
+
         CREATE TABLE IF NOT EXISTS sessions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             participant_id INTEGER NOT NULL,
@@ -115,9 +123,10 @@ def clear_participants():
 
 
 def generate_game(num_participants):
-    """Generate N participants with unique number sets from 1-21."""
+    """Generate N number sets from 1-21, store in game pool."""
     conn = get_db()
     conn.execute("DELETE FROM participants")
+    conn.execute("DELETE FROM game_pool")
     conn.execute("DELETE FROM sessions")
     conn.execute("DELETE FROM checkpoints")
     conn.execute("DELETE FROM results")
@@ -135,17 +144,13 @@ def generate_game(num_participants):
         sets.append(nums)
         idx += count
 
-    for i in range(num_participants):
-        nickname = f"Участник {i + 1}"
-        nums_str = ", ".join(str(n) for n in sets[i])
-        conn.execute(
-            "INSERT INTO participants (nickname, numbers) VALUES (?, ?)",
-            (nickname, nums_str),
-        )
+    for nums in sets:
+        nums_str = ", ".join(str(n) for n in nums)
+        conn.execute("INSERT INTO game_pool (numbers) VALUES (?)", (nums_str,))
 
     conn.commit()
     conn.close()
-    return [{"nickname": f"Участник {i + 1}", "numbers": sets[i]} for i in range(num_participants)]
+    return [{"slot": i + 1, "numbers": sets[i]} for i in range(num_participants)]
 
 
 def update_participant_nickname(old_nickname, new_nickname):
@@ -164,16 +169,58 @@ def update_participant_nickname(old_nickname, new_nickname):
     return ok
 
 
+def get_game_pool():
+    conn = get_db()
+    rows = conn.execute(
+        """SELECT gp.id, gp.numbers, gp.assigned_to, p.nickname
+           FROM game_pool gp
+           LEFT JOIN participants p ON gp.assigned_to = p.id
+           ORDER BY gp.id"""
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def get_pool_status():
+    conn = get_db()
+    total = conn.execute("SELECT COUNT(*) as c FROM game_pool").fetchone()["c"]
+    taken = conn.execute("SELECT COUNT(*) as c FROM game_pool WHERE assigned_to IS NOT NULL").fetchone()["c"]
+    conn.close()
+    return {"total": total, "taken": taken, "available": total - taken}
+
+
 # ---- Sessions ----
 
 def create_session(nickname):
     conn = get_db()
+
+    # Find an unassigned slot in the game pool
+    slot = conn.execute(
+        "SELECT id, numbers FROM game_pool WHERE assigned_to IS NULL LIMIT 1"
+    ).fetchone()
+    if not slot:
+        conn.close()
+        return None
+
+    # Create or get participant
     participant = conn.execute(
         "SELECT id FROM participants WHERE nickname = ?", (nickname.strip(),)
     ).fetchone()
-    if not participant:
-        conn.close()
-        return None
+
+    if participant:
+        participant_id = participant["id"]
+    else:
+        conn.execute(
+            "INSERT INTO participants (nickname, numbers) VALUES (?, ?)",
+            (nickname.strip(), slot["numbers"]),
+        )
+        participant_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+
+    # Mark pool slot as assigned
+    conn.execute(
+        "UPDATE game_pool SET assigned_to = ? WHERE id = ?",
+        (participant_id, slot["id"]),
+    )
 
     order = _shuffle([0, 1, 2, 3, 4])
     salt = "".join(random.choices(string.ascii_lowercase + string.digits, k=8))
@@ -181,7 +228,7 @@ def create_session(nickname):
 
     conn.execute(
         "INSERT INTO sessions (participant_id, token, salt, order_json) VALUES (?, ?, ?, ?)",
-        (participant["id"], token, salt, json.dumps(order)),
+        (participant_id, token, salt, json.dumps(order)),
     )
     conn.commit()
     session = conn.execute(
