@@ -66,7 +66,7 @@ const CHECKPOINTS = [
     location: "Игровая зона с PSP",
     codeComment: "// Режим игры: включён...",
     codeLine: 'const <span class="variable">game</span> = <span class="function">load</span>(<span class="string">"classic-save"</span>);',
-    riddle: "На той же стороне, где турники, есть место, где можно отвлечься от кода. Маленький экран, большие эмоции. Ищи кнопку «Start».",
+    riddle: "Рядом с📚, где тишина — закон, есть место, где можно отвлечься от кода. Полноценная приставка ждёт своего часа. Ищи кнопку «Power».",
     emoji: "🎮",
   },
   {
