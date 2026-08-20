@@ -78,8 +78,7 @@
           <div class="no-digit-note">Цифра выдаётся только после сканирования QR на локации.</div>
           <div id="first-hint-box" class="first-hint-box">
             <div class="arrow">⬇</div>
-            <div class="loc-name" id="first-loc-name"></div>
-            <div class="loc-desc" id="first-loc-desc"></div>
+            <div class="riddle" id="first-riddle" style="border:none;background:none;padding:0;margin:0;text-align:center"></div>
             <div class="mt-1 text-xs text-dim">Ищи QR-код на этой локации</div>
           </div>
           <div class="hint-toggle" onclick="this.nextElementSibling.classList.toggle('visible')">
@@ -147,8 +146,7 @@
 
           const firstCp = CHECKPOINTS[data.order[0]];
           document.getElementById("welcome-name").textContent = "Агент: " + name;
-          document.getElementById("first-loc-name").textContent = firstCp.emoji + " " + firstCp.title;
-          document.getElementById("first-loc-desc").textContent = firstCp.location;
+          document.getElementById("first-riddle").innerHTML = "«" + firstCp.riddle + "»";
           document.getElementById("first-hint-text").textContent = firstCp.hint;
 
           document.getElementById("phase-reg").style.display = "none";
