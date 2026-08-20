@@ -76,17 +76,13 @@
     </div>
   </div>
 
+  <script src="js/config.js"></script>
   <script src="js/app.js"></script>
   <script>
     (function () {
-      const LEADERBOARD_KEY = "quest21_leaderboard";
 
-      function getLB() {
-        try { return JSON.parse(localStorage.getItem(LEADERBOARD_KEY)) || []; } catch { return []; }
-      }
-
-      function render() {
-        const lb = getLB();
+      async function render() {
+        const lb = await QuestApp.getLeaderboard();
 
         // Stats
         const total = lb.length;
@@ -150,8 +146,8 @@
 
       document.getElementById("btn-refresh").addEventListener("click", render);
 
-      document.getElementById("btn-export").addEventListener("click", () => {
-        const lb = getLB();
+      document.getElementById("btn-export").addEventListener("click", async () => {
+        const lb = await QuestApp.getLeaderboard();
         if (!lb.length) { alert("Нет данных для экспорта"); return; }
         let csv = "Место,Имя,Время,Пароль,Дата\n";
         lb.forEach((e, i) => {

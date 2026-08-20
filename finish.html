@@ -48,8 +48,14 @@
         </div>
 
         <div id="my-numbers-section" class="text-center" style="margin-top:1rem">
-          <div class="text-xs text-dim mb-1">ТВОИ НОМЕРКИ:</div>
+          <div class="text-xs text-dim mb-1">НОМЕРКИ УЧАСТНИКА:</div>
           <div id="my-numbers-finish" class="my-numbers-list" style="justify-content:center"></div>
+          <div id="numbers-input-area" class="mt-1">
+            <div class="input-group" style="max-width:300px; margin:0 auto">
+              <label class="input-label" for="numbers-input">// numbers.assign (через запятую)</label>
+              <input type="text" id="numbers-input" class="input" placeholder="3, 7, 14" autocomplete="off">
+            </div>
+          </div>
         </div>
 
         <div class="separator"></div>
@@ -134,9 +140,18 @@
         document.getElementById("my-numbers-finish").innerHTML = state.myNumbers.map(n =>
           '<div class="my-num">' + n + '</div>'
         ).join("");
-      } else {
-        document.getElementById("my-numbers-section").style.display = "none";
+        document.getElementById("numbers-input-area").style.display = "none";
       }
+
+      const numbersInput = document.getElementById("numbers-input");
+      numbersInput.addEventListener("input", () => {
+        const raw = numbersInput.value.replace(/[^0-9,\s]/g, "");
+        numbersInput.value = raw;
+        const nums = raw.split(/[,\s]+/).map(Number).filter(n => n >= 1 && n <= 21);
+        document.getElementById("my-numbers-finish").innerHTML = nums.map(n =>
+          '<div class="my-num">' + n + '</div>'
+        ).join("");
+      });
 
       QuestApp.confetti();
 
@@ -149,7 +164,7 @@
       const btn = document.getElementById("submit-btn");
       const msg = document.getElementById("verify-msg");
 
-      function verify() {
+      async function verify() {
         const val = input.value.trim();
         if (!val) {
           input.style.borderColor = "var(--red)";
@@ -168,15 +183,25 @@
         }
 
         clearInterval(timerInterval);
-        QuestApp.finishQuest();
+        btn.disabled = true;
+        btn.textContent = "⟳ отправка...";
+
+        const rawNums = numbersInput.value.replace(/[^0-9,\s]/g, "");
+        const assignedNums = rawNums.split(/[,\s]+/).map(Number).filter(n => n >= 1 && n <= 21);
+        if (assignedNums.length) {
+          state.myNumbers = assignedNums;
+          QuestApp.setState(state);
+        }
+
+        await QuestApp.finishQuest();
 
         document.getElementById("form-section").style.display = "none";
         document.getElementById("result-section").style.display = "block";
         document.getElementById("finish-time").textContent = timeStr;
 
-        const lb = QuestApp.getLeaderboard();
+        const lb = await QuestApp.getLeaderboard();
         const rank = lb.findIndex(e => e.name === state.nickname && e.time === time) + 1;
-        document.getElementById("player-rank").textContent = rank <= 10 ? "#" + rank : "#10+";
+        document.getElementById("player-rank").textContent = rank >= 0 ? "#" + (rank + 1) : "#10+";
 
         QuestApp.renderLeaderboard(state.nickname);
         QuestApp.confetti();

@@ -65,9 +65,6 @@ const QuestApp = (() => {
   function startQuest(nickname) {
     const order = shuffle([0, 1, 2, 3, 4]);
     const salt = Math.random().toString(36).slice(2, 10);
-    const count = Math.floor(Math.random() * 5) + 1;
-    const allNums = shuffle([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21]);
-    const myNumbers = allNums.slice(0, count).sort((a, b) => a - b);
     const state = {
       nickname: nickname.trim(),
       startTime: Date.now(),
@@ -76,7 +73,7 @@ const QuestApp = (() => {
       currentIndex: 0,
       collectedDigits: [],
       completedCheckpoints: [],
-      myNumbers,
+      myNumbers: [],
     };
     setState(state);
     return state;
@@ -123,7 +120,7 @@ const QuestApp = (() => {
 
   /* ---- finish ---- */
 
-  function finishQuest() {
+  async function finishQuest() {
     const state = getState();
     if (!state || !state.startTime) return null;
     const time = Date.now() - state.startTime;
@@ -133,18 +130,42 @@ const QuestApp = (() => {
       time,
       timeFormatted: formatTime(time),
       password,
+      numbers: state.myNumbers ? state.myNumbers.join(",") : "",
       date: new Date().toISOString(),
     };
+
+    // Save to localStorage as fallback
     const lb = getLeaderboard();
     lb.push(entry);
     lb.sort((a, b) => a.time - b.time);
     if (lb.length > 50) lb.length = 50;
     localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(lb));
+
+    // Try to send to remote API
+    if (typeof API_URL !== "undefined" && API_URL) {
+      try {
+        await fetch(API_URL, {
+          method: "POST",
+          mode: "no-cors",
+          body: JSON.stringify(entry),
+        });
+      } catch (e) { /* fallback to localStorage */ }
+    }
+
     localStorage.removeItem(STORAGE_KEY);
     return entry;
   }
 
-  function getLeaderboard() {
+  async function getLeaderboard() {
+    // Try to fetch from remote API
+    if (typeof API_URL !== "undefined" && API_URL) {
+      try {
+        const res = await fetch(API_URL + "?t=" + Date.now());
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) return data;
+      } catch (e) { /* fallback to localStorage */ }
+    }
+    // Fallback to localStorage
     try { return JSON.parse(localStorage.getItem(LEADERBOARD_KEY)) || []; } catch { return []; }
   }
 
