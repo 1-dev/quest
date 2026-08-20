@@ -7,8 +7,6 @@ const CHECKPOINTS = [
     codeComment: "// Получен новый запрос от агента...",
     codeLine: 'const <span class="variable">mission</span> = <span class="function">decode</span>(<span class="string">"latest-transmission"</span>);',
     riddle: "Среди машин, что именованы зверем, найди ряд, третий по алфавиту. Тот, кто краснеет от ошибок, но не имеет сердца, ждёт тебя там.",
-    hint: "Кластер Lepton. Ищи ARM-компьютер в ряду C (третий ряд от начала). QR-код на столбе или под монитором.",
-    nextHint: "Следующая цель — комната, где двое могут поговорить наедине.",
     emoji: "🔍",
   },
   {
@@ -19,8 +17,6 @@ const CHECKPOINTS = [
     codeComment: "// Узел связи найден. Шифруем данные...",
     codeLine: 'const <span class="variable">peer</span> = <span class="keyword">await</span> <span class="function">establishConnection</span>(<span class="string">"room-p2p"</span>);',
     riddle: "Здесь двое могут договориться без свидетелей. Не та, что с экраном — та, что поменьше. Где слова не улетают в пустоту.",
-    hint: "Малая переговорка — комната для приватных встреч. Не путай с большой переговоркой с телевизором. QR-код на двери или внутри.",
-    nextHint: "Дальше — туда, где можно согреть душу и желудок.",
     emoji: "🤝",
   },
   {
@@ -31,8 +27,6 @@ const CHECKPOINTS = [
     codeComment: "// Пополнение энергии...",
     codeLine: 'const <span class="variable">fuel</span> = <span class="function">brew</span>(<span class="string">"dark-roast"</span>, { temperature: <span class="number">96</span> });',
     riddle: "Топливо для дедлайнов бывает двух видов: тёплое в кружке или горячее из автомата. Ищи там, где голодный кодер находит пропитание.",
-    hint: "Это либо столовая, либо автомат с кофе. Одно из двух. QR-код будет рядом с местом, где наливают.",
-    nextHint: "Теперь ищи место, где книги молчат, а время стоит на месте.",
     emoji: "☕",
   },
   {
@@ -43,8 +37,6 @@ const CHECKPOINTS = [
     codeComment: "// Внимание: аномалия обнаружена",
     codeLine: 'const <span class="variable">anomaly</span> = <span class="function">detect</span>({ type: <span class="string">"spacetime-distortion"</span> });',
     riddle: "Место, где тишина — закон, а знания спрятаны между строк. Самая дальняя точка от шума и суеты. Книги молчат, но всё знают.",
-    hint: "Библиотека. Она находится в самой удалённой части кампуса от учебного пространства. QR-код на стеллаже или у входа.",
-    nextHint: "Последний рубеж — найди то, что встречает каждого при входе.",
     emoji: "🕳️",
   },
   {
@@ -55,8 +47,6 @@ const CHECKPOINTS = [
     codeComment: "// Финальный коммит. Цель — рядом.",
     codeLine: 'const <span class="variable">mission</span> = <span class="keyword">await</span> <span class="function">deploy</span>(<span class="string">"production"</span>);',
     riddle: "Финальный коммит. Найди то, что встречает каждого, кто переступает порог. Логотип, который не нуждается в представлении.",
-    hint: "Логотип School 21 стоит прямо при входе в кампус. Не ресепшн — просто логотип на стене у двери. QR-код рядом.",
-    nextHint: "Все коммиты собраны! Беги к организатору.",
     emoji: "💻",
   },
 ];

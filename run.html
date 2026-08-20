@@ -207,7 +207,7 @@
           <div id="next-area" style="opacity:0;transition:opacity 0.6s">
             ${isLast
               ? `<div class="next-location-box"><div class="arrow">🏁</div><div class="location-name">ВСЕ КОММИТЫ СОБРАНЫ!</div><div class="location-desc">Беги к организатору.</div><div class="mt-2"><a href="finish.html" class="btn btn-primary glow">→ git push</a></div></div>`
-              : `<div class="next-location-box"><div class="arrow">⬇</div><div class="riddle" style="border:none;background:none;padding:0;margin:0;text-align:center">«${nextCp.riddle}»</div><div class="mt-1 text-xs text-dim">Ищи QR-код</div></div>`}
+              : `<div class="next-location-box"><div class="arrow">⬇</div><div class="text-dim">Следующий QR-код ждёт тебя.</div></div>`}
           </div>
           <div class="text-center mt-2"><span class="hint-toggle" id="reset-btn" style="font-size:0.7rem">↺ Начать заново</span></div>`;
 
@@ -267,22 +267,13 @@
       }
 
       function showTooEarly(cpId, seqIndex, currentIndex, order) {
-        const cp = CHECKPOINTS[cpId];
         renderProgress(currentIndex);
         document.getElementById("term-title").textContent = "checkpoint@" + cpId + "@wrong-order";
         document.getElementById("checkpoint-content").innerHTML = `
           <div class="blocked-overlay">
             <div class="big-icon">🚫</div>
             <div class="title">Неверный порядок!</div>
-            <div class="text-dim mt-1">Этот чекпоинт #${seqIndex+1}. Сейчас ты на шаге #${currentIndex+1}.</div>
-            <div class="code-block mt-2" style="text-align:left;display:inline-block">
-              ${order.map((id,i) => {
-                const c = CHECKPOINTS[id];
-                const s = i < currentIndex ? "✓" : i === currentIndex ? "▶" : "○";
-                const cls = i < currentIndex ? "text-green" : i === currentIndex ? "text-yellow" : "text-dim";
-                return `<div class="${cls}">${s} ${c.emoji} ${c.title}</div>`;
-              }).join("")}
-            </div>
+            <div class="text-dim mt-1">Сейчас ты на шаге #${currentIndex + 1}. Ищи QR на текущей локации.</div>
           </div>`;
       }
 

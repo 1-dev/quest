@@ -81,10 +81,6 @@
             <div class="riddle" id="first-riddle" style="border:none;background:none;padding:0;margin:0;text-align:center"></div>
             <div class="mt-1 text-xs text-dim">Ищи QR-код на этой локации</div>
           </div>
-          <div class="hint-toggle" onclick="this.nextElementSibling.classList.toggle('visible')">
-            💡 Нужна подробная подсказка?
-          </div>
-          <div class="hint-content" id="first-hint-text"></div>
         </div>
 
       </div>
@@ -147,7 +143,6 @@
           const firstCp = CHECKPOINTS[data.order[0]];
           document.getElementById("welcome-name").textContent = "Агент: " + name;
           document.getElementById("first-riddle").innerHTML = "«" + firstCp.riddle + "»";
-          document.getElementById("first-hint-text").textContent = firstCp.hint;
 
           document.getElementById("phase-reg").style.display = "none";
           document.getElementById("phase-hint").style.display = "block";
