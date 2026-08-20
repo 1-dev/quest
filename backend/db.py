@@ -222,7 +222,7 @@ def create_session(nickname):
         (participant_id, slot["id"]),
     )
 
-    order = _shuffle([0, 1, 2, 3, 4])
+    order = _shuffle(list(range(8)))
     salt = "".join(random.choices(string.ascii_lowercase + string.digits, k=8))
     token = _generate_token()
 
@@ -282,7 +282,7 @@ def scan_checkpoint(token, checkpoint_id):
     ]
 
     expected_index = len(completed)
-    if expected_index >= 5:
+    if expected_index >= 8:
         conn.close()
         return {"ok": False, "error": "all_done"}
 
@@ -297,7 +297,7 @@ def scan_checkpoint(token, checkpoint_id):
     )
     conn.commit()
     conn.close()
-    return {"ok": True, "digit": [4, 2, 1, 3, 0][checkpoint_id], "step": expected_index + 1}
+    return {"ok": True, "digit": [4, 2, 1, 3, 0, 5, 6, 7][checkpoint_id], "step": expected_index + 1}
 
 
 def get_session_progress(token):

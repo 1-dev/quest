@@ -48,7 +48,7 @@
   <script>
     const API = window.location.origin;
 
-    const DIGITS = [4, 2, 1, 3, 0];
+    const DIGITS = [4, 2, 1, 3, 0, 5, 6, 7];
 
     function formatTime(ms) {
       const t = Math.floor(ms / 1000);
@@ -61,7 +61,7 @@
     function renderProgress(current, total) {
       const el = document.getElementById("progress");
       if (!el) return;
-      total = total || 5;
+      total = total || 8;
       let steps = "";
       for (let i = 0; i < total; i++) {
         const cls = i < current ? "completed" : i === current ? "active" : "";
@@ -76,7 +76,7 @@
     function renderPasswordDisplay(digits) {
       const el = document.getElementById("password-display");
       if (!el) return;
-      el.innerHTML = Array.from({length:5}, (_, i) => {
+      el.innerHTML = Array.from({length:8}, (_, i) => {
         const filled = digits[i] !== undefined;
         return `<div class="password-digit ${filled?"filled":""}">${filled ? digits[i] : "?"}</div>`;
       }).join("");
@@ -152,7 +152,7 @@
           showCurrentCheckpoint(targetCp, order.indexOf(targetCp), order, data.nickname, startTime);
         } else {
           // No checkpoint specified — show "scan QR" prompt
-          if (currentIndex >= 5) {
+          if (currentIndex >= 8) {
             location.href = "finish.html";
             return;
           }
@@ -175,7 +175,7 @@
 
       function showCurrentCheckpoint(cpId, seqIndex, order, nickname, startTime) {
         const cp = CHECKPOINTS[cpId];
-        const isLast = seqIndex === 4;
+        const isLast = seqIndex === 7;
         const nextCpId = isLast ? null : order[seqIndex + 1];
         const nextCp = nextCpId !== null ? CHECKPOINTS[nextCpId] : null;
 

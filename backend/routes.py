@@ -105,7 +105,7 @@ def finish_quest(req: FinishRequest):
         (session["id"],),
     ).fetchall()
 
-    if len(completed) < 5:
+    if len(completed) < 8:
         raise HTTPException(400, "Not all checkpoints completed")
 
     db.finish_session(req.token)
