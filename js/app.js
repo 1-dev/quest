@@ -261,7 +261,8 @@ const QuestApp = (() => {
   function initGuard() {
     const page = currentPageId();
     if (page === "start" || page === "index" || page === "") {
-      resetQuest();
+      const hasCpParam = new URLSearchParams(location.search).has("cp");
+      if (!hasCpParam) resetQuest();
       return;
     }
     if (page === "run" || page === "finish") {
