@@ -28,11 +28,11 @@ except ImportError:
 DEFAULT_BASE_URL = "https://yourschool21.github.io/volunteer-sprint/"
 
 CHECKPOINTS = [
-    {"id": 0, "label": "01-norminnet",  "title": "Норминнет-Детектив",  "loc": "Опенспейс с ARM-компьютерами"},
-    {"id": 1, "label": "02-p2p-room",   "title": "P2P Переговорка",     "loc": "Большая переговорка с телевизором"},
-    {"id": 2, "label": "03-caffeine",   "title": "Зона Кофеина",        "loc": "Автомат с кофе в холе"},
-    {"id": 3, "label": "04-black-hole", "title": "Чёрная Дыра",         "loc": "Тихая зона / Угол кампуса"},
-    {"id": 4, "label": "05-heart",      "title": "Сердце Кампуса",      "loc": "Ресепшн / Логотип"},
+    {"id": 0, "label": "01-norminnet",  "title": "Норминнет-Детектив",  "loc": "ARM в кластере Lepton, ряд C"},
+    {"id": 1, "label": "02-silence",    "title": "Комната Тишины",      "loc": "Малая переговорка для уединённых бесед"},
+    {"id": 2, "label": "03-caffeine",   "title": "Зона Кофеина",        "loc": "Столовая ИЛИ автомат с кофе"},
+    {"id": 3, "label": "04-black-hole", "title": "Чёрная Дыра",         "loc": "Библиотека — самая далёкая точка"},
+    {"id": 4, "label": "05-heart",      "title": "Сердце Кампуса",      "loc": "Логотип School 21 у входа"},
 ]
 
 

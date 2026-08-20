@@ -22,14 +22,14 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             nickname TEXT UNIQUE NOT NULL,
             numbers TEXT DEFAULT '',
-            created_at TEXT DEFAULT (datetime('now'))
+            created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
         );
 
         CREATE TABLE IF NOT EXISTS game_pool (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             numbers TEXT NOT NULL,
             assigned_to INTEGER DEFAULT NULL,
-            created_at TEXT DEFAULT (datetime('now')),
+            created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
             FOREIGN KEY (assigned_to) REFERENCES participants(id)
         );
 
@@ -39,7 +39,7 @@ def init_db():
             token TEXT UNIQUE NOT NULL,
             salt TEXT NOT NULL,
             order_json TEXT NOT NULL,
-            started_at TEXT DEFAULT (datetime('now')),
+            started_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
             finished_at TEXT,
             FOREIGN KEY (participant_id) REFERENCES participants(id)
         );
@@ -48,7 +48,7 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             session_id INTEGER NOT NULL,
             checkpoint_id INTEGER NOT NULL,
-            scanned_at TEXT DEFAULT (datetime('now')),
+            scanned_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
             FOREIGN KEY (session_id) REFERENCES sessions(id),
             UNIQUE(session_id, checkpoint_id)
         );
@@ -62,7 +62,7 @@ def init_db():
             password TEXT NOT NULL,
             numbers TEXT DEFAULT '',
             route TEXT DEFAULT '',
-            created_at TEXT DEFAULT (datetime('now')),
+            created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
             FOREIGN KEY (session_id) REFERENCES sessions(id)
         );
     """)
@@ -250,7 +250,7 @@ def get_session(token):
 def finish_session(token):
     conn = get_db()
     conn.execute(
-        "UPDATE sessions SET finished_at = datetime('now') WHERE token = ?",
+        "UPDATE sessions SET finished_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now') WHERE token = ?",
         (token,),
     )
     conn.commit()
