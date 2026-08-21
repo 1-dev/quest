@@ -56,7 +56,7 @@
 
         <div id="form-section">
           <div class="text-center mb-2">
-            <span class="status status-info">Назови пароль организатору для подтверждения</span>
+            <span class="status status-info">Вернись к началу и назови пароль</span>
           </div>
           <div class="input-group">
             <label class="input-label" for="password-input">// password.verify</label>
@@ -198,11 +198,9 @@
         const startTime = new Date(prog.session.started_at).getTime();
         const elapsed = Date.now() - startTime;
 
-        // Build password
+        // Build password in visit order
         const collectedDigits = completed.map(id => DIGITS[id]);
-        const pw = ["","","","","","","",""];
-        order.forEach((cpId, i) => { pw[cpId] = String(collectedDigits[i]); });
-        const password = pw.join("");
+        const password = collectedDigits.join("");
 
         // Render
         renderProgress(8);
