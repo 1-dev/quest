@@ -44,7 +44,7 @@
 
         <div class="text-center">
           <div class="text-xs text-dim mb-1">МАРШРУТ:</div>
-          <div id="route-display" class="text-sm text-dim">Все 8 чекпоинтов пройдены! 💪</div>
+          <div id="route-display" class="text-sm text-dim"></div>
         </div>
 
         <div id="my-numbers-section" class="text-center" style="margin-top:1rem">
@@ -213,6 +213,12 @@
         document.getElementById("time-code").textContent = '"' + formatTime(elapsed) + '"';
         document.getElementById("finish-time").textContent = formatTime(elapsed);
         renderPasswordDisplay(collectedDigits);
+
+        const routeLabels = order.map((id, i) => {
+          const cp = CHECKPOINTS[id];
+          return `<span class="text-green">${i + 1}</span>. ${cp.emoji} ${cp.title}`;
+        });
+        document.getElementById("route-display").innerHTML = routeLabels.join(" → ");
 
         // Hide numbers until password is verified
         document.getElementById("my-numbers-section").style.display = "none";
