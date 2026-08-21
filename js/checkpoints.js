@@ -76,7 +76,7 @@ const CHECKPOINTS = [
     location: "Кластер Boson — за лестницей",
     codeComment: "// Скрытый процесс обнаружен...",
     codeLine: 'const <span class="variable">hidden</span> = <span class="function">reveal</span>(<span class="string">"behind-the-scenes"</span>);',
-    riddle: "Есть кластер, названный в честь частицы-переносчика. Под его лестницей спрятан экран, который никто не замечает. Загляни за ступеньки.",
+    riddle: "Есть кластер, названный в честь частицы-переносчика. Под его лестницей за стеклом спрятан экран, который никто не замечает.",
     emoji: "🪜",
   },
 ];
