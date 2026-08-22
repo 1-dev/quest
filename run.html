@@ -327,12 +327,19 @@
             <div class="big-icon">✓</div>
             <div class="title">${cp.emoji} ${cp.title}</div>
             <div class="status status-warning mt-2">Уже отсканирован</div>
+            <button id="scan-btn" class="btn btn-primary glow mt-2" style="font-size:1rem; padding:0.8rem 2rem;">📷 Открыть камеру</button>
           </div>
           <div class="next-location-box" style="opacity:1">
             <div class="arrow">⬇</div>
             <div class="riddle" style="border:none;background:none;padding:0;margin:0;text-align:center">«${nextCp.riddle}»</div>
             <div class="mt-1 text-xs text-dim">Ищи QR-код</div>
+          </div>
+          <div id="scanner-container" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;background:#000">
+            <video id="qr-video" autoplay playsinline style="width:100%;height:100%;object-fit:cover"></video>
+            <button id="scanner-close" style="position:absolute;top:1rem;right:1rem;z-index:10000;background:rgba(0,0,0,0.7);color:#fff;border:1px solid #fff;padding:0.5rem 1rem;border-radius:8px;cursor:pointer;font-size:1rem">✕ Закрыть</button>
+            <div style="position:absolute;bottom:2rem;left:0;right:0;text-align:center;color:#fff;font-size:0.9rem;text-shadow:0 1px 3px rgba(0,0,0,0.8)">Наведи камеру на QR-код</div>
           </div>`;
+        document.getElementById("scan-btn").addEventListener("click", startScanner);
       }
 
       function showTooEarly(cpId, seqIndex, currentIndex, order) {
@@ -343,7 +350,14 @@
             <div class="big-icon">🚫</div>
             <div class="title">Неверный порядок!</div>
             <div class="text-dim mt-1">Сейчас ты на шаге #${currentIndex + 1}. Ищи QR на текущей локации.</div>
+            <button id="scan-btn" class="btn btn-primary glow mt-2" style="font-size:1rem; padding:0.8rem 2rem;">📷 Открыть камеру</button>
+          </div>
+          <div id="scanner-container" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;background:#000">
+            <video id="qr-video" autoplay playsinline style="width:100%;height:100%;object-fit:cover"></video>
+            <button id="scanner-close" style="position:absolute;top:1rem;right:1rem;z-index:10000;background:rgba(0,0,0,0.7);color:#fff;border:1px solid #fff;padding:0.5rem 1rem;border-radius:8px;cursor:pointer;font-size:1rem">✕ Закрыть</button>
+            <div style="position:absolute;bottom:2rem;left:0;right:0;text-align:center;color:#fff;font-size:0.9rem;text-shadow:0 1px 3px rgba(0,0,0,0.8)">Наведи камеру на QR-код</div>
           </div>`;
+        document.getElementById("scan-btn").addEventListener("click", startScanner);
       }
 
       function showBlocked(error) {
