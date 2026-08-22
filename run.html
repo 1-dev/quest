@@ -278,7 +278,12 @@
           <div id="next-area" style="opacity:0;transition:opacity 0.6s">
             ${isLast
               ? `<div class="next-location-box"><div class="arrow">🏁</div><div class="location-name">ВСЕ КОММИТЫ СОБРАНЫ!</div><div class="location-desc">Беги к организатору.</div><div class="mt-2"><a href="finish.html" class="btn btn-primary glow">→ git push</a></div></div>`
-              : `<div class="next-location-box"><div class="arrow">⬇</div><div class="riddle" style="border:none;background:none;padding:0;margin:0;text-align:center">«${nextCp.riddle}»</div><div class="mt-1 text-xs text-dim">Ищи QR-код</div></div>`}
+              : `<div class="next-location-box"><div class="arrow">⬇</div><div class="riddle" style="border:none;background:none;padding:0;margin:0;text-align:center">«${nextCp.riddle}»</div><div class="mt-2"><button id="scan-btn" class="btn btn-primary glow" style="font-size:1rem; padding:0.8rem 2rem;">📷 Открыть камеру</button></div></div>`}
+          </div>
+          <div id="scanner-container" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;background:#000">
+            <video id="qr-video" autoplay playsinline style="width:100%;height:100%;object-fit:cover"></video>
+            <button id="scanner-close" style="position:absolute;top:1rem;right:1rem;z-index:10000;background:rgba(0,0,0,0.7);color:#fff;border:1px solid #fff;padding:0.5rem 1rem;border-radius:8px;cursor:pointer;font-size:1rem">✕ Закрыть</button>
+            <div style="position:absolute;bottom:2rem;left:0;right:0;text-align:center;color:#fff;font-size:0.9rem;text-shadow:0 1px 3px rgba(0,0,0,0.8)">Наведи камеру на QR-код</div>
           </div>
               <div class="text-center mt-2"><span class="hint-toggle" id="reset-btn" style="font-size:0.7rem;display:none"></span></div>`;
 
@@ -294,6 +299,8 @@
 
         setTimeout(() => {
           document.getElementById("next-area").style.opacity = "1";
+          const scanBtn = document.getElementById("scan-btn");
+          if (scanBtn) scanBtn.addEventListener("click", startScanner);
         }, 1400);
         const canvas = document.getElementById("confetti-canvas");
         const ctx = canvas.getContext("2d");
