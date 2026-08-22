@@ -213,7 +213,8 @@ def generate_qr(cp_id: int, base_url: str = "https://quest.1-dev.ru"):
     draw = ImageDraw.Draw(img)
     cx, cy = w // 2, h // 2
     r = logo_size // 2 + 3
-    draw.rounded_rectangle([cx - r, cy - r, cx + r, cy + r], radius=r // 3, fill="white", outline="#00ff41", width=2)
+    box_half = r * 2
+    draw.rounded_rectangle([cx - box_half, cy - box_half, cx + box_half, cy + box_half], radius=box_half // 3, fill="white", outline="#00ff41", width=2)
 
     try:
         font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", logo_size - 4)
