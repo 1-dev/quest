@@ -89,6 +89,15 @@
             <div id="pool-list" style="max-height:400px;overflow-y:auto"></div>
           </div>
 
+          <!-- Sessions -->
+          <div class="admin-card">
+            <h3>🔑 Сессии (<span id="s-count">0</span>)</h3>
+            <div class="flex gap-1 mb-2">
+              <button id="s-refresh" class="btn btn-blue btn-sm">⟳ Обновить</button>
+            </div>
+            <div id="s-list" style="max-height:400px;overflow-y:auto"></div>
+          </div>
+
           <!-- Results -->
           <div class="admin-card">
             <h3>🏆 Результаты (<span id="r-count">0</span>)</h3>
@@ -233,9 +242,49 @@
       loadResults();
     });
 
+    // ---- Sessions ----
+    async function loadSessions() {
+      const sessions = await api("/api/admin/sessions");
+      document.getElementById("s-count").textContent = sessions.length;
+      if (!sessions.length) {
+        document.getElementById("s-list").innerHTML = '<div class="text-dim text-center" style="padding:1rem">Нет активных сессий</div>';
+        return;
+      }
+      const medals = ["🥇", "🥈", "🥉"];
+      document.getElementById("s-list").innerHTML =
+        '<table class="admin-table"><tr><th>#</th><th>Имя</th><th>Номерки</th><th>Статус</th><th></th></tr>' +
+        sessions.map((s, i) => {
+          const status = s.finished_at
+            ? '<span class="tag tag-green">Финишировал</span>'
+            : '<span class="tag tag-yellow">В процессе</span>';
+          const nums = s.numbers ? s.numbers.split(",").map(n => '<span class="tag tag-green">' + n.trim() + '</span>').join("") : "—";
+          return `<tr>
+            <td>${i + 1}</td>
+            <td>${esc(s.nickname)}</td>
+            <td>${nums}</td>
+            <td>${status}</td>
+            <td><button class="btn btn-sm" style="border-color:var(--red);color:var(--red)" onclick="deleteSession(${s.participant_id}, '${esc(s.nickname)}')">🗑</button></td>
+          </tr>`;
+        }).join("") + '</table>';
+    }
+
+    window.deleteSession = async function(pid, name) {
+      if (!confirm(`Удалить сессию ${name}?`)) return;
+      await api("/api/admin/delete-session", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({participant_id: pid}),
+      });
+      loadSessions();
+      loadPool();
+    };
+
+    document.getElementById("s-refresh").addEventListener("click", loadSessions);
+
     loadPool();
     loadResults();
-    setInterval(() => { loadPool(); loadResults(); }, 5000);
+    loadSessions();
+    setInterval(() => { loadPool(); loadResults(); loadSessions(); }, 5000);
   </script>
 </body>
 </html>

@@ -380,6 +380,31 @@ def clear_results():
     conn.close()
 
 
+def delete_session_by_participant_id(participant_id):
+    conn = get_db()
+    conn.execute("DELETE FROM checkpoints WHERE session_id IN (SELECT id FROM sessions WHERE participant_id = ?)", (participant_id,))
+    conn.execute("DELETE FROM sessions WHERE participant_id = ?", (participant_id,))
+    conn.execute("DELETE FROM participants WHERE id = ?", (participant_id,))
+    conn.commit()
+    conn.close()
+
+
+def resume_session(nickname):
+    conn = get_db()
+    participant = conn.execute(
+        "SELECT id FROM participants WHERE nickname = ?", (nickname.strip(),)
+    ).fetchone()
+    if not participant:
+        conn.close()
+        return None
+    session = conn.execute(
+        "SELECT * FROM sessions WHERE participant_id = ? ORDER BY id DESC LIMIT 1",
+        (participant["id"],),
+    ).fetchone()
+    conn.close()
+    return dict(session) if session else None
+
+
 # ---- Helpers ----
 
 def _format_time(ms):

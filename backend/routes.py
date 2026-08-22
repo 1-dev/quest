@@ -68,6 +68,14 @@ def start_quest(req: StartRequest):
     if not nickname:
         raise HTTPException(400, "Nickname required")
 
+    existing = db.resume_session(nickname)
+    if existing:
+        return {
+            "ok": True,
+            "token": existing["token"],
+            "order": __import__("json").loads(existing["order_json"]),
+        }
+
     session = db.create_session(nickname)
     if not session:
         raise HTTPException(400, "Нет свободных слотов. Игра заполнена.")
@@ -124,3 +132,28 @@ def get_results():
 def clear_results():
     db.clear_results()
     return {"ok": True}
+
+
+# ---- Admin: delete session ----
+
+class DeleteSessionRequest(BaseModel):
+    participant_id: int
+
+
+@router.post("/api/admin/delete-session")
+def delete_session(req: DeleteSessionRequest):
+    db.delete_session_by_participant_id(req.participant_id)
+    return {"ok": True}
+
+
+@router.get("/api/admin/sessions")
+def get_sessions():
+    sessions = db.get_db().execute(
+        """SELECT s.id, s.token, s.started_at, s.finished_at, s.order_json,
+                  p.id as participant_id, p.nickname, p.numbers
+           FROM sessions s
+           JOIN participants p ON p.id = s.participant_id
+           ORDER BY s.id"""
+    ).fetchall()
+    db.get_db().close()
+    return [dict(r) for r in sessions]
