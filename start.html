@@ -173,20 +173,36 @@
           })();
 
           // QR Scanner
+          let _scannerStream = null;
+          let _scannerRAF = null;
           document.getElementById("scan-btn").addEventListener("click", () => {
+            if (location.protocol !== "https:" && location.hostname !== "localhost") {
+              alert("Камера доступна только через HTTPS.\nОтсканируй QR-код через камеру телефона.");
+              return;
+            }
             const container = document.getElementById("scanner-container");
             const video = document.getElementById("qr-video");
             container.style.display = "block";
+
+            function stopScanner() {
+              if (_scannerRAF) cancelAnimationFrame(_scannerRAF);
+              if (_scannerStream) _scannerStream.getTracks().forEach(t => t.stop());
+              _scannerStream = null;
+              container.style.display = "none";
+            }
+
+            document.getElementById("scanner-close").onclick = stopScanner;
+
             const cvs = document.createElement("canvas");
             const cctx = cvs.getContext("2d");
-            let scanning = true;
 
             navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
               .then(stream => {
+                _scannerStream = stream;
                 video.srcObject = stream;
                 video.play();
                 function tick() {
-                  if (!scanning) return;
+                  if (!_scannerStream) return;
                   if (video.readyState === video.HAVE_ENOUGH_DATA) {
                     cvs.width = video.videoWidth;
                     cvs.height = video.videoHeight;
@@ -194,9 +210,7 @@
                     const imageData = cctx.getImageData(0, 0, cvs.width, cvs.height);
                     const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert" });
                     if (code) {
-                      scanning = false;
-                      stream.getTracks().forEach(t => t.stop());
-                      container.style.display = "none";
+                      stopScanner();
                       try {
                         const url = new URL(code.data);
                         const cp = url.searchParams.get("cp");
@@ -211,7 +225,7 @@
                       return;
                     }
                   }
-                  requestAnimationFrame(tick);
+                  _scannerRAF = requestAnimationFrame(tick);
                 }
                 tick();
               })
@@ -219,12 +233,6 @@
                 container.style.display = "none";
                 alert("Камера недоступна: " + err.message);
               });
-
-            document.getElementById("scanner-close").addEventListener("click", () => {
-              scanning = false;
-              if (video.srcObject) video.srcObject.getTracks().forEach(t => t.stop());
-              container.style.display = "none";
-            });
           });
         } catch (e) {
           err.textContent = "// ошибка сервера: " + e.message;
