@@ -193,7 +193,7 @@
           // Validate this is the right checkpoint
           if (order[currentIndex] !== targetCp) {
             if (completed.includes(targetCp)) {
-              showAlreadyDone(targetCp, order.indexOf(targetCp));
+              showAlreadyDone(targetCp, order.indexOf(targetCp), currentIndex, order);
             } else {
               showTooEarly(targetCp, order.indexOf(targetCp), currentIndex, order);
             }
@@ -316,16 +316,22 @@
         })();
       }
 
-      function showAlreadyDone(cpId, seqIndex) {
+      function showAlreadyDone(cpId, seqIndex, currentIndex, order) {
         const cp = CHECKPOINTS[cpId];
-        renderProgress(0);
+        const nextCpId = order[currentIndex];
+        const nextCp = CHECKPOINTS[nextCpId];
+        renderProgress(currentIndex);
         document.getElementById("term-title").textContent = "checkpoint@" + cpId + "@scanned";
         document.getElementById("checkpoint-content").innerHTML = `
           <div class="blocked-overlay">
             <div class="big-icon">✓</div>
             <div class="title">${cp.emoji} ${cp.title}</div>
             <div class="status status-warning mt-2">Уже отсканирован</div>
-            <div class="text-dim mt-1">Ищи QR на следующей точке.</div>
+          </div>
+          <div class="next-location-box" style="opacity:1">
+            <div class="arrow">⬇</div>
+            <div class="riddle" style="border:none;background:none;padding:0;margin:0;text-align:center">«${nextCp.riddle}»</div>
+            <div class="mt-1 text-xs text-dim">Ищи QR-код</div>
           </div>`;
       }
 
