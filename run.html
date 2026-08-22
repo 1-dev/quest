@@ -44,41 +44,63 @@
   </div>
 
   <canvas id="confetti-canvas"></canvas>
-  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <script src="js/checkpoints.js"></script>
   <script>
     const API = window.location.origin;
 
     const DIGITS = [4, 2, 1, 3, 0, 5, 6, 7];
 
-    let _scanner = null;
     function startScanner() {
       const container = document.getElementById("scanner-container");
       container.style.display = "block";
-      const scanner = new Html5Qrcode("qr-reader");
-      _scanner = scanner;
-      scanner.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 250, height: 250 } },
-        (decodedText) => {
-          scanner.stop().then(() => { _scanner = null; });
-          container.style.display = "none";
-          try {
-            const url = new URL(decodedText);
-            const cp = url.searchParams.get("cp");
-            if (cp !== null) {
-              location.href = "run.html?t=" + localStorage.getItem("quest_token") + "&cp=" + cp;
-            } else {
-              alert("QR не содержит checkpoint");
+      const video = document.getElementById("qr-video");
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      let scanning = true;
+
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+        .then(stream => {
+          video.srcObject = stream;
+          video.play();
+          function tick() {
+            if (!scanning) return;
+            if (video.readyState === video.HAVE_ENOUGH_DATA) {
+              canvas.width = video.videoWidth;
+              canvas.height = video.videoHeight;
+              ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+              const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+              const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert" });
+              if (code) {
+                scanning = false;
+                stream.getTracks().forEach(t => t.stop());
+                container.style.display = "none";
+                try {
+                  const url = new URL(code.data);
+                  const cp = url.searchParams.get("cp");
+                  if (cp !== null) {
+                    location.href = "run.html?t=" + localStorage.getItem("quest_token") + "&cp=" + cp;
+                  } else {
+                    alert("QR не содержит checkpoint");
+                  }
+                } catch(e) {
+                  alert("Неверный QR: " + code.data);
+                }
+                return;
+              }
             }
-          } catch(e) {
-            alert("Неверный QR: " + decodedText);
+            requestAnimationFrame(tick);
           }
-        },
-        () => {}
-      );
+          tick();
+        })
+        .catch(err => {
+          container.style.display = "none";
+          alert("Камера недоступна: " + err.message);
+        });
+
       document.getElementById("scanner-close").addEventListener("click", () => {
-        scanner.stop().then(() => { _scanner = null; });
+        scanning = false;
+        if (video.srcObject) video.srcObject.getTracks().forEach(t => t.stop());
         container.style.display = "none";
       });
     }
@@ -201,7 +223,7 @@
               <button id="scan-btn" class="btn btn-primary glow" style="font-size:1rem; padding:0.8rem 2rem;">📷 Открыть камеру</button>
             </div>
             <div id="scanner-container" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;background:#000">
-              <div id="qr-reader" style="width:100%;height:100%"></div>
+              <video id="qr-video" style="width:100%;height:100%;object-fit:cover"></video>
               <button id="scanner-close" style="position:absolute;top:1rem;right:1rem;z-index:10000;background:rgba(0,0,0,0.7);color:#fff;border:1px solid #fff;padding:0.5rem 1rem;border-radius:8px;cursor:pointer">✕ Закрыть</button>
             </div>`;
 

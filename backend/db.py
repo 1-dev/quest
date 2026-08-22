@@ -86,7 +86,7 @@ def add_participant(nickname, numbers=""):
     try:
         conn.execute(
             "INSERT INTO participants (nickname, numbers) VALUES (?, ?)",
-            (nickname.strip(), numbers),
+            (nickname.strip().lower(), numbers),
         )
         conn.commit()
         return True
@@ -204,7 +204,7 @@ def create_session(nickname):
 
     # Create or get participant
     participant = conn.execute(
-        "SELECT id FROM participants WHERE nickname = ?", (nickname.strip(),)
+        "SELECT id FROM participants WHERE nickname = ?", (nickname.strip().lower(),)
     ).fetchone()
 
     if participant:
@@ -212,7 +212,7 @@ def create_session(nickname):
     else:
         conn.execute(
             "INSERT INTO participants (nickname, numbers) VALUES (?, ?)",
-            (nickname.strip(), slot["numbers"]),
+            (nickname.strip().lower(), slot["numbers"]),
         )
         participant_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
 
@@ -392,7 +392,7 @@ def delete_session_by_participant_id(participant_id):
 def resume_session(nickname):
     conn = get_db()
     participant = conn.execute(
-        "SELECT id FROM participants WHERE nickname = ?", (nickname.strip(),)
+        "SELECT id FROM participants WHERE nickname = ?", (nickname.strip().lower(),)
     ).fetchone()
     if not participant:
         conn.close()
