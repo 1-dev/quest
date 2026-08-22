@@ -197,16 +197,32 @@ def generate_qr(cp_id: int, base_url: str = "https://quest.1-dev.ru"):
         raise HTTPException(404, "Checkpoint not found")
     try:
         import qrcode
-        from qrcode.image.styledpil import StyledPilImage
-        from qrcode.image.styles.moduledrawers import RoundedModuleDrawer
+        from PIL import Image, ImageDraw, ImageFont
     except ImportError:
-        raise HTTPException(500, "qrcode library not installed")
+        raise HTTPException(500, "qrcode/pillow not installed")
 
     url = f"{base_url.rstrip('/')}/start.html?cp={cp['id']}"
-    qr = qrcode.QRCode(version=1, error_correction=qrcode.constants.ERROR_CORRECT_M, box_size=10, border=2)
+    qr = qrcode.QRCode(version=1, error_correction=qrcode.constants.ERROR_CORRECT_H, box_size=10, border=2)
     qr.add_data(url)
     qr.make(fit=True)
-    img = qr.make_image(image_factory=StyledPilImage, module_drawer=RoundedModuleDrawer())
+    img = qr.make_image(fill_color="#1a1a2e", back_color="white").convert("RGB")
+
+    # Draw S21 logo in center
+    w, h = img.size
+    logo_size = min(w, h) // 4
+    draw = ImageDraw.Draw(img)
+    cx, cy = w // 2, h // 2
+    r = logo_size // 2 + 4
+    draw.rounded_rectangle([cx - r, cy - r, cx + r, cy + r], radius=r // 3, fill="white", outline="#00ff41", width=2)
+
+    try:
+        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", logo_size - 6)
+    except Exception:
+        font = ImageFont.load_default()
+    text = "S21"
+    bbox = draw.textbbox((0, 0), text, font=font)
+    tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
+    draw.text((cx - tw // 2, cy - th // 2 - 2), text, fill="#00ff41", font=font)
 
     import io
     buf = io.BytesIO()
