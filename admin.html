@@ -111,6 +111,65 @@
 
         </div>
 
+        <!-- Checkpoints -->
+        <div class="admin-card" style="margin-top:1.5rem">
+          <h3>🗺️ Чекпоинты (<span id="cp-count">0</span>)</h3>
+          <div class="flex gap-1 mb-2">
+            <button id="cp-refresh" class="btn btn-blue btn-sm">⟳ Обновить</button>
+            <button id="cp-add" class="btn btn-primary btn-sm">+ Добавить</button>
+          </div>
+          <div id="cp-list"></div>
+        </div>
+
+        <!-- Checkpoint Edit Modal -->
+        <div id="cp-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;background:rgba(0,0,0,0.8);overflow-y:auto">
+          <div style="max-width:600px;margin:2rem auto;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:1.5rem">
+            <div class="flex items-center justify-between mb-2">
+              <h3 style="color:var(--green);margin:0">Редактировать чекпоинт</h3>
+              <button id="cp-modal-close" class="btn btn-sm">✕</button>
+            </div>
+            <input type="hidden" id="cp-edit-id">
+            <div class="input-group mb-1">
+              <label class="input-label">ID (номер)</label>
+              <input type="number" id="cp-edit-id-num" class="input" min="0" max="99">
+            </div>
+            <div class="input-group mb-1">
+              <label class="input-label">Цифра пароля</label>
+              <input type="number" id="cp-edit-digit" class="input" min="0" max="9">
+            </div>
+            <div class="input-group mb-1">
+              <label class="input-label">Эмодзи</label>
+              <input type="text" id="cp-edit-emoji" class="input" maxlength="4">
+            </div>
+            <div class="input-group mb-1">
+              <label class="input-label">Название</label>
+              <input type="text" id="cp-edit-title" class="input">
+            </div>
+            <div class="input-group mb-1">
+              <label class="input-label">Локация (скрыто от игроков)</label>
+              <input type="text" id="cp-edit-location" class="input">
+            </div>
+            <div class="input-group mb-1">
+              <label class="input-label">Загадка</label>
+              <textarea id="cp-edit-riddle" class="input" rows="3"></textarea>
+            </div>
+            <div class="input-group mb-1">
+              <label class="input-label">Код комментарий</label>
+              <input type="text" id="cp-edit-code-comment" class="input">
+            </div>
+            <div class="input-group mb-1">
+              <label class="input-label">Код строка (HTML)</label>
+              <input type="text" id="cp-edit-code-line" class="input">
+            </div>
+            <div class="flex gap-1 mt-2">
+              <button id="cp-save" class="btn btn-primary glow">💾 Сохранить</button>
+              <button id="cp-delete" class="btn" style="border-color:var(--red);color:var(--red)">🗑 Удалить</button>
+              <button id="cp-qr" class="btn" style="border-color:var(--yellow);color:var(--yellow)">📷 QR-код</button>
+            </div>
+            <div id="cp-qr-preview" class="text-center mt-2" style="display:none"></div>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
@@ -281,9 +340,108 @@
 
     document.getElementById("s-refresh").addEventListener("click", loadSessions);
 
+    // ---- Checkpoints ----
+    async function loadCheckpoints() {
+      const cps = await api("/api/checkpoints");
+      document.getElementById("cp-count").textContent = cps.length;
+      if (!cps.length) {
+        document.getElementById("cp-list").innerHTML = '<div class="text-dim text-center" style="padding:1rem">Нет чекпоинтов</div>';
+        return;
+      }
+      document.getElementById("cp-list").innerHTML =
+        '<table class="admin-table"><tr><th>#</th><th></th><th>Название</th><th>Цифра</th><th>Локация</th><th></th></tr>' +
+        cps.map(cp =>
+          `<tr>
+            <td class="text-dim">${cp.id}</td>
+            <td>${cp.emoji}</td>
+            <td>${esc(cp.title)}</td>
+            <td>${cp.digit}</td>
+            <td class="text-dim" style="font-size:0.7rem">${esc(cp.location)}</td>
+            <td><button class="btn btn-sm" onclick='editCheckpoint(${JSON.stringify(cp).replace(/'/g, "&#39;")})'>✏️</button></td>
+          </tr>`
+        ).join("") + '</table>';
+    }
+
+    window.editCheckpoint = function(cp) {
+      document.getElementById("cp-edit-id").value = cp.id;
+      document.getElementById("cp-edit-id-num").value = cp.id;
+      document.getElementById("cp-edit-digit").value = cp.digit;
+      document.getElementById("cp-edit-emoji").value = cp.emoji;
+      document.getElementById("cp-edit-title").value = cp.title;
+      document.getElementById("cp-edit-location").value = cp.location;
+      document.getElementById("cp-edit-riddle").value = cp.riddle;
+      document.getElementById("cp-edit-code-comment").value = cp.code_comment || "";
+      document.getElementById("cp-edit-code-line").value = cp.code_line || "";
+      document.getElementById("cp-qr-preview").style.display = "none";
+      document.getElementById("cp-modal").style.display = "block";
+    };
+
+    document.getElementById("cp-modal-close").addEventListener("click", () => {
+      document.getElementById("cp-modal").style.display = "none";
+    });
+
+    document.getElementById("cp-add").addEventListener("click", () => {
+      document.getElementById("cp-edit-id").value = "";
+      document.getElementById("cp-edit-id-num").value = "";
+      document.getElementById("cp-edit-digit").value = "";
+      document.getElementById("cp-edit-emoji").value = "📍";
+      document.getElementById("cp-edit-title").value = "";
+      document.getElementById("cp-edit-location").value = "";
+      document.getElementById("cp-edit-riddle").value = "";
+      document.getElementById("cp-edit-code-comment").value = "";
+      document.getElementById("cp-edit-code-line").value = "";
+      document.getElementById("cp-qr-preview").style.display = "none";
+      document.getElementById("cp-modal").style.display = "block";
+    });
+
+    document.getElementById("cp-save").addEventListener("click", async () => {
+      const idVal = document.getElementById("cp-edit-id").value;
+      const idNum = parseInt(document.getElementById("cp-edit-id-num").value);
+      const data = {
+        id: idNum,
+        digit: parseInt(document.getElementById("cp-edit-digit").value),
+        emoji: document.getElementById("cp-edit-emoji").value || "📍",
+        title: document.getElementById("cp-edit-title").value,
+        location: document.getElementById("cp-edit-location").value,
+        riddle: document.getElementById("cp-edit-riddle").value,
+        code_comment: document.getElementById("cp-edit-code-comment").value,
+        code_line: document.getElementById("cp-edit-code-line").value,
+      };
+      if (isNaN(data.id) || !data.title || !data.riddle) {
+        alert("Заполни ID, название и загадку");
+        return;
+      }
+      await api("/api/checkpoints/save", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(data),
+      });
+      document.getElementById("cp-modal").style.display = "none";
+      loadCheckpoints();
+    });
+
+    document.getElementById("cp-delete").addEventListener("click", async () => {
+      const id = document.getElementById("cp-edit-id-num").value;
+      if (!id && id !== "0") return;
+      if (!confirm("Удалить чекпоинт #" + id + "?")) return;
+      await api("/api/checkpoints/" + id, { method: "DELETE" });
+      document.getElementById("cp-modal").style.display = "none";
+      loadCheckpoints();
+    });
+
+    document.getElementById("cp-qr").addEventListener("click", () => {
+      const id = document.getElementById("cp-edit-id-num").value;
+      const preview = document.getElementById("cp-qr-preview");
+      preview.style.display = "block";
+      preview.innerHTML = '<img src="/api/checkpoints/' + id + '/qr" style="max-width:250px;border-radius:8px;border:1px solid var(--border)"><div class="text-xs text-dim mt-1">Скачай: правый клик → Сохранить</div>';
+    });
+
+    document.getElementById("cp-refresh").addEventListener("click", loadCheckpoints);
+
     loadPool();
     loadResults();
     loadSessions();
+    loadCheckpoints();
     setInterval(() => { loadPool(); loadResults(); loadSessions(); }, 5000);
   </script>
 </body>

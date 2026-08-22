@@ -12,6 +12,7 @@ from backend.routes import router
 @asynccontextmanager
 async def lifespan(app):
     db.init_db()
+    db.seed_checkpoints()
     yield
 
 

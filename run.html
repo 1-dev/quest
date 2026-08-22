@@ -49,8 +49,6 @@
   <script>
     const API = window.location.origin;
 
-    const DIGITS = [4, 2, 1, 3, 0, 5, 6, 7];
-
     let _scannerStream = null;
     let _scannerRAF = null;
     function startScanner() {
@@ -125,7 +123,7 @@
     function renderProgress(current, total) {
       const el = document.getElementById("progress");
       if (!el) return;
-      total = total || 8;
+      total = total || CHECKPOINTS.filter(c => c).length || 8;
       let steps = "";
       for (let i = 0; i < total; i++) {
         const cls = i < current ? "completed" : i === current ? "active" : "";
@@ -140,7 +138,8 @@
     function renderPasswordDisplay(digits) {
       const el = document.getElementById("password-display");
       if (!el) return;
-      el.innerHTML = Array.from({length:8}, (_, i) => {
+      const total = CHECKPOINTS.filter(c => c).length || 8;
+      el.innerHTML = Array.from({length:total}, (_, i) => {
         const filled = digits[i] !== undefined;
         return `<div class="password-digit ${filled?"filled":""}">${filled ? digits[i] : "?"}</div>`;
       }).join("");
@@ -157,6 +156,7 @@
     }
 
     (async function () {
+      await loadCheckpoints();
       const token = localStorage.getItem("quest_token");
       if (!token) { location.href = "start.html"; return; }
 

@@ -1,5 +1,7 @@
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import Response
 from pydantic import BaseModel
+from typing import Optional
 
 from . import db
 
@@ -7,6 +9,16 @@ router = APIRouter()
 
 
 # ---- Models ----
+
+class CheckpointRequest(BaseModel):
+    id: int
+    digit: int
+    title: str
+    location: str
+    code_comment: str = ""
+    code_line: str = ""
+    riddle: str
+    emoji: str = "📍"
 
 class StartRequest(BaseModel):
     nickname: str
@@ -157,3 +169,47 @@ def get_sessions():
     ).fetchall()
     db.get_db().close()
     return [dict(r) for r in sessions]
+
+
+# ---- Checkpoints Config ----
+
+@router.get("/api/checkpoints")
+def get_checkpoints():
+    return db.get_checkpoints()
+
+
+@router.post("/api/checkpoints/save")
+def save_checkpoint(req: CheckpointRequest):
+    db.save_checkpoint(req.dict())
+    return {"ok": True}
+
+
+@router.delete("/api/checkpoints/{cp_id}")
+def delete_checkpoint(cp_id: int):
+    db.delete_checkpoint(cp_id)
+    return {"ok": True}
+
+
+@router.get("/api/checkpoints/{cp_id}/qr")
+def generate_qr(cp_id: int, base_url: str = "https://quest.1-dev.ru"):
+    cp = db.get_checkpoint(cp_id)
+    if not cp:
+        raise HTTPException(404, "Checkpoint not found")
+    try:
+        import qrcode
+        from qrcode.image.styledpil import StyledPilImage
+        from qrcode.image.styles.moduledrawers import RoundedModuleDrawer
+    except ImportError:
+        raise HTTPException(500, "qrcode library not installed")
+
+    url = f"{base_url.rstrip('/')}/start.html?cp={cp['id']}"
+    qr = qrcode.QRCode(version=1, error_correction=qrcode.constants.ERROR_CORRECT_M, box_size=10, border=2)
+    qr.add_data(url)
+    qr.make(fit=True)
+    img = qr.make_image(image_factory=StyledPilImage, module_drawer=RoundedModuleDrawer())
+
+    import io
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    buf.seek(0)
+    return Response(content=buf.read(), media_type="image/png")

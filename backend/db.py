@@ -65,6 +65,17 @@ def init_db():
             created_at TEXT DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
             FOREIGN KEY (session_id) REFERENCES sessions(id)
         );
+
+        CREATE TABLE IF NOT EXISTS checkpoints_config (
+            id INTEGER PRIMARY KEY,
+            digit INTEGER NOT NULL,
+            title TEXT NOT NULL,
+            location TEXT NOT NULL,
+            code_comment TEXT DEFAULT '',
+            code_line TEXT DEFAULT '',
+            riddle TEXT NOT NULL,
+            emoji TEXT DEFAULT '📍'
+        );
     """)
     conn.close()
 
@@ -413,3 +424,70 @@ def _format_time(ms):
     s = total_sec % 60
     cs = (ms % 1000) // 10
     return f"{m:02d}:{s:02d}.{cs:02d}"
+
+
+# ---- Checkpoints Config ----
+
+DEFAULT_CHECKPOINTS = [
+    {"id": 0, "digit": 4, "title": "Норминнет-Детектив", "location": "ARM в кластере Lepton, ряд C", "code_comment": "// Получен новый запрос от агента...", "code_line": 'const <span class="variable">mission</span> = <span class="function">decode</span>(<span class="string">"latest-transmission"</span>);', "riddle": "Машины здесь названы в честь мельчайших частиц. Одно из имён — перевод греческого «тонкий». Найди его и ищи третий ряд по алфавиту.", "emoji": "🔍"},
+    {"id": 1, "digit": 2, "title": "Комната Тишины", "location": "Малая переговорка для уединённых бесед", "code_comment": "// Узел связи найден. Шифруем данные...", "code_line": 'const <span class="variable">peer</span> = <span class="keyword">await</span> <span class="function">establishConnection</span>(<span class="string">"room-p2p"</span>);', "riddle": "Здесь двое могут договориться без свидетелей. Не та, что с экраном — та, что поменьше. Где слова не улетают в пустоту.", "emoji": "🤝"},
+    {"id": 2, "digit": 1, "title": "Зона Кофеина", "location": "Столовая ИЛИ автомат с кофе", "code_comment": "// Пополнение энергии...", "code_line": 'const <span class="variable">fuel</span> = <span class="function">brew</span>(<span class="string">"dark-roast"</span>, { temperature: <span class="number">96</span> });', "riddle": "Топливо для дедлайнов бывает двух видов: тёплое в кружке или горячее из автомата. Ищи там, где голодный кодер находит пропитание.", "emoji": "☕"},
+    {"id": 3, "digit": 3, "title": "Чёрная Дыра", "location": "Библиотека — самая далёкая точка кампуса", "code_comment": "// Внимание: аномалия обнаружена", "code_line": 'const <span class="variable">anomaly</span> = <span class="function">detect</span>({ type: <span class="string">"spacetime-distortion"</span> });', "riddle": "Место, где тишина — закон, а знания спрятаны между строк. Самая дальняя точка от шума и суеты. Книги молчат, но всё знают.", "emoji": "🕳️"},
+    {"id": 4, "digit": 0, "title": "Сердце Кампуса", "location": "Логотип School 21 у входа в кампус", "code_comment": "// Финальный коммит. Цель — рядом.", "code_line": 'const <span class="variable">mission</span> = <span class="keyword">await</span> <span class="function">deploy</span>(<span class="string">"production"</span>);', "riddle": "Найди то, что встречает каждого, кто переступает порог. Логотип, который не нуждается в представлении.", "emoji": "💻"},
+    {"id": 5, "digit": 5, "title": "Турникет", "location": "Закуток с турниками по пути в библиотеку", "code_comment": "// Физическая нагрузка增强了 ментальную стойкость...", "code_line": 'const <span class="variable">stamina</span> = <span class="function">train</span>(<span class="string">"pull-ups"</span>);', "riddle": "По пути к📚, где тишина, есть место, где тело борется с гравитацией. Закуток, где слова «подтянуться» имеют буквальный смысл.", "emoji": "💪"},
+    {"id": 6, "digit": 6, "title": "Аркада", "location": "Игровая зона с приставкой", "code_comment": "// Режим игры: включён...", "code_line": 'const <span class="variable">game</span> = <span class="function">load</span>(<span class="string">"classic-save"</span>);', "riddle": "Рядом с📚, где тишина — закон, есть место, где можно отвлечься от кода. Полноценная приставка ждёт своего часа. Ищи кнопку «Power».", "emoji": "🎮"},
+    {"id": 7, "digit": 7, "title": "Скрытый Монитор", "location": "Кластер Boson — за лестницей", "code_comment": "// Скрытый процесс обнаружен...", "code_line": 'const <span class="variable">hidden</span> = <span class="function">reveal</span>(<span class="string">"behind-the-scenes"</span>);', "riddle": "Есть кластер, названный в честь частицы-переносчика. Под его лестницей за стеклом спрятан экран, который никто не замечает.", "emoji": "🪜"},
+]
+
+
+def seed_checkpoints():
+    conn = get_db()
+    count = conn.execute("SELECT COUNT(*) as c FROM checkpoints_config").fetchone()["c"]
+    if count == 0:
+        for cp in DEFAULT_CHECKPOINTS:
+            conn.execute(
+                "INSERT INTO checkpoints_config (id, digit, title, location, code_comment, code_line, riddle, emoji) VALUES (?,?,?,?,?,?,?,?)",
+                (cp["id"], cp["digit"], cp["title"], cp["location"], cp["code_comment"], cp["code_line"], cp["riddle"], cp["emoji"]),
+            )
+        conn.commit()
+    conn.close()
+
+
+def get_checkpoints():
+    conn = get_db()
+    rows = conn.execute("SELECT * FROM checkpoints_config ORDER BY id").fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def get_checkpoint(cp_id):
+    conn = get_db()
+    row = conn.execute("SELECT * FROM checkpoints_config WHERE id = ?", (cp_id,)).fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+
+def save_checkpoint(data):
+    conn = get_db()
+    conn.execute(
+        """INSERT OR REPLACE INTO checkpoints_config (id, digit, title, location, code_comment, code_line, riddle, emoji)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+        (data["id"], data["digit"], data["title"], data["location"], data.get("code_comment", ""), data.get("code_line", ""), data["riddle"], data.get("emoji", "📍")),
+    )
+    conn.commit()
+    conn.close()
+
+
+def delete_checkpoint(cp_id):
+    conn = get_db()
+    conn.execute("DELETE FROM checkpoints_config WHERE id = ?", (cp_id,))
+    conn.commit()
+    conn.close()
+
+
+def get_checkpoint_digits():
+    rows = get_checkpoints()
+    digits = [0] * len(rows)
+    for r in rows:
+        digits[r["id"]] = r["digit"]
+    return digits

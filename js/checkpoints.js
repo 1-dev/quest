@@ -1,82 +1,10 @@
-const CHECKPOINTS = [
-  {
-    id: 0,
-    digit: 4,
-    title: "Норминнет-Детектив",
-    location: "ARM в кластере Lepton, ряд C",
-    codeComment: "// Получен новый запрос от агента...",
-    codeLine: 'const <span class="variable">mission</span> = <span class="function">decode</span>(<span class="string">"latest-transmission"</span>);',
-    riddle: "Машины здесь названы в честь мельчайших частиц. Одно из имён — перевод греческого «тонкий». Найди его и ищи третий ряд по алфавиту.",
-    emoji: "🔍",
-  },
-  {
-    id: 1,
-    digit: 2,
-    title: "Комната Тишины",
-    location: "Малая переговорка для уединённых бесед",
-    codeComment: "// Узел связи найден. Шифруем данные...",
-    codeLine: 'const <span class="variable">peer</span> = <span class="keyword">await</span> <span class="function">establishConnection</span>(<span class="string">"room-p2p"</span>);',
-    riddle: "Здесь двое могут договориться без свидетелей. Не та, что с экраном — та, что поменьше. Где слова не улетают в пустоту.",
-    emoji: "🤝",
-  },
-  {
-    id: 2,
-    digit: 1,
-    title: "Зона Кофеина",
-    location: "Столовая ИЛИ автомат с кофе",
-    codeComment: "// Пополнение энергии...",
-    codeLine: 'const <span class="variable">fuel</span> = <span class="function">brew</span>(<span class="string">"dark-roast"</span>, { temperature: <span class="number">96</span> });',
-    riddle: "Топливо для дедлайнов бывает двух видов: тёплое в кружке или горячее из автомата. Ищи там, где голодный кодер находит пропитание.",
-    emoji: "☕",
-  },
-  {
-    id: 3,
-    digit: 3,
-    title: "Чёрная Дыра",
-    location: "Библиотека — самая далёкая точка кампуса",
-    codeComment: "// Внимание: аномалия обнаружена",
-    codeLine: 'const <span class="variable">anomaly</span> = <span class="function">detect</span>({ type: <span class="string">"spacetime-distortion"</span> });',
-    riddle: "Место, где тишина — закон, а знания спрятаны между строк. Самая дальняя точка от шума и суеты. Книги молчат, но всё знают.",
-    emoji: "🕳️",
-  },
-  {
-    id: 4,
-    digit: 0,
-    title: "Сердце Кампуса",
-    location: "Логотип School 21 у входа в кампус",
-    codeComment: "// Финальный коммит. Цель — рядом.",
-    codeLine: 'const <span class="variable">mission</span> = <span class="keyword">await</span> <span class="function">deploy</span>(<span class="string">"production"</span>);',
-    riddle: "Найди то, что встречает каждого, кто переступает порог. Логотип, который не нуждается в представлении.",
-    emoji: "💻",
-  },
-  {
-    id: 5,
-    digit: 5,
-    title: "Турникет",
-    location: "Закуток с турниками по пути в библиотеку",
-    codeComment: "// Физическая нагрузка增强了 ментальную стойкость...",
-    codeLine: 'const <span class="variable">stamina</span> = <span class="function">train</span>(<span class="string">"pull-ups"</span>);',
-    riddle: "По пути к📚, где тишина, есть место, где тело борется с гравитацией. Закуток, где слова «подтянуться» имеют буквальный смысл.",
-    emoji: "💪",
-  },
-  {
-    id: 6,
-    digit: 6,
-    title: "Аркада",
-    location: "Игровая зона с PSP",
-    codeComment: "// Режим игры: включён...",
-    codeLine: 'const <span class="variable">game</span> = <span class="function">load</span>(<span class="string">"classic-save"</span>);',
-    riddle: "Рядом с📚, где тишина — закон, есть место, где можно отвлечься от кода. Полноценная приставка ждёт своего часа. Ищи кнопку «Power».",
-    emoji: "🎮",
-  },
-  {
-    id: 7,
-    digit: 7,
-    title: "Скрытый Монитор",
-    location: "Кластер Boson — за лестницей",
-    codeComment: "// Скрытый процесс обнаружен...",
-    codeLine: 'const <span class="variable">hidden</span> = <span class="function">reveal</span>(<span class="string">"behind-the-scenes"</span>);',
-    riddle: "Есть кластер, названный в честь частицы-переносчика. Под его лестницей за стеклом спрятан экран, который никто не замечает.",
-    emoji: "🪜",
-  },
-];
+const CHECKPOINTS = [];
+let DIGITS = [];
+
+async function loadCheckpoints() {
+  const res = await fetch(window.location.origin + "/api/checkpoints");
+  const data = await res.json();
+  CHECKPOINTS.length = 0;
+  data.forEach(cp => { CHECKPOINTS[cp.id] = cp; });
+  DIGITS = data.map(cp => cp.digit);
+}
