@@ -205,7 +205,7 @@ def generate_qr(cp_id: int, base_url: str = "https://quest.1-dev.ru"):
     qr = qrcode.QRCode(version=1, error_correction=qrcode.constants.ERROR_CORRECT_H, box_size=10, border=2)
     qr.add_data(url)
     qr.make(fit=True)
-    img = qr.make_image(fill_color="#1a1a2e", back_color="white").convert("RGB")
+    img = qr.make_image(fill_color="black", back_color="white").convert("RGB")
 
     # Draw S21 logo in center
     w, h = img.size
@@ -214,7 +214,7 @@ def generate_qr(cp_id: int, base_url: str = "https://quest.1-dev.ru"):
     cx, cy = w // 2, h // 2
     r = logo_size // 2 + 3
     box_half = r * 2
-    draw.rounded_rectangle([cx - box_half, cy - box_half, cx + box_half, cy + box_half], radius=box_half // 3, fill="white", outline="#00ff41", width=2)
+    draw.rounded_rectangle([cx - box_half, cy - box_half, cx + box_half, cy + box_half], radius=box_half // 3, fill="white", outline="black", width=2)
 
     try:
         font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", logo_size - 4)
@@ -223,7 +223,7 @@ def generate_qr(cp_id: int, base_url: str = "https://quest.1-dev.ru"):
     text = "S21"
     bbox = draw.textbbox((0, 0), text, font=font)
     tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
-    draw.text((cx - tw // 2, cy - th // 2 - 1), text, fill="#00ff41", font=font)
+    draw.text((cx - tw // 2, cy - th // 2), text, fill="black", font=font)
 
     import io
     buf = io.BytesIO()
