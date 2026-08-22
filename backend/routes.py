@@ -223,7 +223,7 @@ def generate_qr(cp_id: int, base_url: str = "https://quest.1-dev.ru"):
     text = "S21"
     bbox = draw.textbbox((0, 0), text, font=font)
     tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
-    draw.text((cx - tw // 2, cy - th // 2), text, fill="black", font=font)
+    draw.text((cx - tw // 2, cy - th // 2 - th // 8), text, fill="black", font=font)
 
     import io
     buf = io.BytesIO()
