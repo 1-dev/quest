@@ -209,20 +209,20 @@ def generate_qr(cp_id: int, base_url: str = "https://quest.1-dev.ru"):
 
     # Draw S21 logo in center
     w, h = img.size
-    logo_size = min(w, h) // 4
+    logo_size = min(w, h) // 6
     draw = ImageDraw.Draw(img)
     cx, cy = w // 2, h // 2
-    r = logo_size // 2 + 4
+    r = logo_size // 2 + 3
     draw.rounded_rectangle([cx - r, cy - r, cx + r, cy + r], radius=r // 3, fill="white", outline="#00ff41", width=2)
 
     try:
-        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", logo_size - 6)
+        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", logo_size - 4)
     except Exception:
         font = ImageFont.load_default()
     text = "S21"
     bbox = draw.textbbox((0, 0), text, font=font)
     tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
-    draw.text((cx - tw // 2, cy - th // 2 - 2), text, fill="#00ff41", font=font)
+    draw.text((cx - tw // 2, cy - th // 2 - 1), text, fill="#00ff41", font=font)
 
     import io
     buf = io.BytesIO()
